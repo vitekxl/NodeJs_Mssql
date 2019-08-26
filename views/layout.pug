@@ -1,0 +1,14 @@
+doctype html
+html
+
+
+
+
+  head
+    title=title
+    if !href
+      link(rel='stylesheet', href='/stylesheets/style.css')
+    else
+      link(rel='stylesheet', href=href)
+  body
+    block content

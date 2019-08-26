@@ -1,0 +1,12 @@
+extends layout
+
+block content
+    .main.container
+        .row
+            .col-md-6.col-md-offset-3
+            form(method='POST' action='/r' name='add')
+                select(id='select', name='table')
+                    each item in list
+                        option=item
+                input.form-control(type='submit')
+
