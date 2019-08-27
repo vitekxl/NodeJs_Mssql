@@ -1,0 +1,11 @@
+extends layout
+
+
+block content
+    form(method='POST')
+        div.form-group
+            label(for='request') SQL REQUEST:
+            input#request.form-control(type='text' placeholder='SQL' name='sqlrequest' )
+            br
+            button.form-control(type='submit') Send
+            p!=answer

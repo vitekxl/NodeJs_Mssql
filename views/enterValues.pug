@@ -19,41 +19,49 @@ block content
                             input#Z-name.form-control(type='text' placeholder='Artikel_Art' name='artikelArtName' required)
                         else if tablename === 'ARTIKEL'
                             label(for='AA-Name') ARTIKEL_ART:
-                            select#Artike-lArt
+                            select#Artike-lArt(name = 'artikelArt')
                                 each item in table.artikelArt
                                     option=item
                             br
-                            label(for='Z-Name') Zustand name:
-                            input#Z-name.form-control(type='text' placeholder='Zustand' name='zustandName' required)
+                            label(for='Z-Name') Artikel name:
+                            input#Z-name.form-control(type='text' placeholder='Artiklel' name='artikelName' required)
                             br
                             label(for='Anzahl') Anzahl auf der Lager:
                             input#Z-name.form-control(type='text' placeholder='Anzahlt' name='anzahl' required)
                         else if tablename === 'GERAET'
                             label(for='G-Id') ARTIKEL ART:
-                                select#ArtikelArt
+                                select#ArtikelArt(name = 'artikelArt')
                                     each item in table.artikelArt
                                         option=item
                                 br
 
                             label(for='G-Id') ARTIKEL:
-                            select#Artikel
+                            select#Artikel(name = 'artikelName')
                                 each item in table.artikel
                                     option=item
                             br
+                            label(for='G-Id') Zustand:
+                                select#Artikel(name = 'zustandName')
+                                    each item in table.zustandName
+                                        option=item
+                                br
                             label(for='Z-Name') Geraet ID:
                             input#Z-name.form-control(type='text' placeholder='Geraet ID' name='geraet_ID' required)
                             br
                             label(for='Anzahl') Vorhanden auf der Lager:
-                            input#Z-name.form-control(type='checkbox' placeholder="Vorhandensein" name='isAufLager' required)
+                            input#Z-name.form-control(type='checkbox' placeholder="Vorhandensein" name='isAufLager')
 
                         else if tablename === 'FIRMA'
                             label Firma name:
-                            input#firma-name.form-control(type='text' placeholder='Firma name' name='firma_name' required)
+                            input#firma-name.form-control(type='text' placeholder='Firma name' name='firmaName' required)
                         else if tablename === 'MITARBEITER'
                             label(for='G-Id') FIRMA NANE:
-                                select#Firma-name
+                                select#Firma-name(name = 'firmaName')
                                     each item in table.firma
                                         option=item
+                            br
+                            label(for='MA-ID') K-nummer:
+                            input#MA-ID.form-control(type='text' placeholder='K-Nummer' name='maID' required)
                             br
                             label(for='MA-VName') Vorname:
                             input#MA-VName.form-control(type='text' placeholder='MA Vorname' name='maVname' required)
@@ -65,25 +73,47 @@ block content
                             input#TART.form-control(type='text' placeholder='TRANSAKTIONSART' name='transart' required)
 
                         else if tablename === 'TRANSAKTION'
+                            label(for='T-art') Transaktionsart:
+                                select#T-art(name = 'tart')
+                                    each item in table.tart
+                                        option=item
+                                br
                             label(for='MA1-N') MA1:
-                                select#MA1-N
+                                select#MA1-N(name = 'ma1name')
                                     each item in table.ma
                                         option=item
                             br
                             label(for='MA2-N') MA2:
-                                select#MA2-N
+                                select#MA2-N(name = 'ma2name')
                                     option [NULL]
                                     each item in table.ma
                                         option=item
                             br
+                            label(for='G-Id') ARTIKEL ART:
+                                select#ArtikelArt(name = 'artikelArt')
+                                    each item in table.artikelArt
+                                        option=item
+                                br
+
+                            label(for='G-Id') ARTIKEL:
+                            select#Artikel(name = 'artikelName')
+                                each item in table.artikel
+                                    option=item
+                            br
                             label(for='GERAET_ID') GERAET:
-                                select#GERAET_ID
+                                select#GERAET_ID(name = 'gerateName')
                                     each item in table.geraetID
                                         option=item
                             br
                             label(for='Descr') Description:
                             input#Descr.form-control(type='text' placeholder='Description' name='descr')
+                            br
+                            label(for='actual') Ist Aktuel:
+                            input#actual.form-control(type='checkbox' name='isActual')
 
+                        else if tablename === 'TEST_TABLE'
+                            label(for='text') Text:
+                                input#text.form-control(type='text' placeholder='text' name='text' required)
                         else
                             p error input tablename
                     button.btn.btn-primary(type='submit') Add
