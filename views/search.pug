@@ -1,0 +1,9 @@
+extends layout
+
+block content
+    form(method='POST' action='/search' name='add')
+        select(id='search', name='search')
+            each item in elements
+                option=item
+        input.form-control(type='submit')
+

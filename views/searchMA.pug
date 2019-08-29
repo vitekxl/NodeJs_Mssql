@@ -1,0 +1,29 @@
+extends layout
+
+block content
+
+        label(for='Firma-name') FIRMA NANE:
+            select#Firma-name(name = 'firmaName')
+                option unselected
+                each item in table.firma
+                    option=item
+        br
+        label(for='MA-ID') K-nummer:
+        input#MA-ID.form-control(type='text' placeholder='K-Nummer' name='maID' required)
+        br
+        label(for='MA-VName') Vorname:
+        input#MA-VName.form-control(type='text' placeholder='MA Vorname' name='maVname' required)
+        br
+        label(for='MA-NName') Nachname:
+        input#MA-NName.form-control(type='text' placeholder='MA Nachname' name='maNname' required)
+
+
+        div.main-table
+            table
+                tr
+                each th_text in head
+                    th=th_text
+                -for(var i = 0; i<values.length; i++)
+                tr
+                each td_text in values[i]
+                    td=td_text
