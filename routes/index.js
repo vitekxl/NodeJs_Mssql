@@ -1,8 +1,9 @@
 var express = require('express');
 var router = express.Router();
 var sql = require("mssql");
-var request = require('request');
-var app = express();
+
+var DB = require("../db/DB");
+
 
 
 var config = {
@@ -11,6 +12,7 @@ var config = {
   server: 'localhost',
   database: 'TestDB'
 };
+
 
 
 function objToArr(arr){
@@ -39,7 +41,7 @@ const poolPromise = new sql.ConnectionPool(config)
       console.log('Connected to MSSQL')
       return pool
     })
-    .catch(err => console.log('Database Connection Failed! Bad Config: ', err))
+    .catch(err => console.log('Database Connection Failed! Bad Config: ', err));
 
 
 router.get('/', async (req, res) => {
@@ -104,12 +106,10 @@ async function RetrieveFromDb(sqlReq, res)
     return result;
 
   } catch (err) {
-    res.status(500)
-    res.send(err.message)
+    res.status(500);
+    res.send(err.message);
   }
 }
-
-
 
 
 router.post('/r', async (req, res) => {
@@ -388,6 +388,12 @@ router.post('/confirmation', async (req, res, next) => {
 });
 
 router.get('/sql', async (req, res) => {
+  const db = new DB(config);
+  await db.init(config);
+  console.log("")
+  //await db.loadColumn("ZUSTAND", "ZUSTAND_ID")
+
+  console.log(await db.getColumn("ZUSTAND", "ZUSTAND_ID"));
   res.render('runSql', {text : ""})
 });
 
@@ -446,8 +452,17 @@ router.post('/sql', async (req, res) => {
 
 
   res.render('runSql', {answer: message})
-
-
 });
+
+router.get('/search', function (req, res) {
+  res.render('search', {elements: ['Geraet', 'Transaktion', 'Mitarbeiter']})
+})
+
+router.post('/search' , function (req, res) {
+  var search = req.body.search;
+  if(search === 'Mitarbeiter'){
+    res.render('searchMA', {})
+  }
+})
 
 module.exports = router;
