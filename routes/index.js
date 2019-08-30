@@ -8,32 +8,15 @@ var DB = require("../db/DB");
 
 var config = {
   user: 'sa',
-  password: 'SQLSyskron2019!',
+  password: 'Prizma1994!',
   server: 'localhost',
   database: 'TestDB'
 };
 
 
+const db = new DB(config);
+db.init(config);
 
-function objToArr(arr){
-  var res = {};
-  if(arr.length === 0){
-    res.head = [];
-    res.values = [];
-    return res;
-  }
-  var head = Object.keys(arr[0]);
-  var values = [];
-
-  arr.forEach( function (obj) {
-    values.push(Object.values(obj));
-  });
-
-  res.head = head;
-  res.values = values;
-
-  return res;
-}
 
 const poolPromise = new sql.ConnectionPool(config)
     .connect()
@@ -45,54 +28,13 @@ const poolPromise = new sql.ConnectionPool(config)
 
 
 router.get('/', async (req, res) => {
-  try {
-    const pool = await poolPromise
-    const result = await pool.request()
-        .input('input_parameter', sql.Int, req.query.input_parameter)
-        .query('select * from ZUSTAND')
-    console.log(result);
     res.render('index', { title: 'Express' });
-
-  } catch (err) {
-    res.status(500)
-    res.send(err.message)
-  }
 });
 
-router.get('/second', function(req, res, next) {
-  res.render('second', { text: 'what are you doing here?', title: 'second' });
-  sql.connect(config, function (err) {
-    if (err) console.log(err);
-
-    var request = new sql.Request();
-    var sqlReq = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Test_table'";
-    request.query(sqlReq, function (err, recordset) {
-      if (err) console.log(err);
-        console.log(recordset);
-        sql.close();
-      })
-  });
-});
 
 router.get('/r', async  (req, res, next) => {
 
-    var sqlReq = "Select TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_CATALOG='TestDB';"
-
-    try {
-      const pool = await poolPromise;
-      const result = await pool.request()
-          .query(sqlReq)
-
-      var conlumnlist = [];
-      result.recordset.forEach(function (column){
-        conlumnlist.push(column['TABLE_NAME']);
-      });
-      res.render('makeRequest', { list: conlumnlist});
-
-    } catch (err) {
-      res.status(500)
-      res.send(err.message)
-    }
+  res.render('makeRequest', { list: Object.keys(db.tables)});
 });
 
 
@@ -113,113 +55,43 @@ async function RetrieveFromDb(sqlReq, res)
 
 
 router.post('/r', async (req, res) => {
-  console.log("R POST");
-  console.log(req.body);
-  var input = {};
-  input.recordset = {};
-  input.tablename = req.body['tableName'];
-  input.type = "";
 
+
+  var tablename = req.body['tableName'];
+
+  //console.log(db);
   let table = {};
-  table.artikelArt = [];
-  table.artikel = [];
-  table.firma = [];
+  table.values      = await db.getTable(req.body['tableName']);
+
+  table.artikelArt  = await db.getColumn("ARTIKEL_ART", 'ARTIKEL_ART_NAME' );
+  table.artikel     = await db.getColumn("ARTIKEL", 'ARTIKEL_NAME' );
+  table.firma       = await db.getColumn("FIRMA", 'FIRMA_NAME' );
+  table.geraetID    = await db.getColumn("GERAET", 'GERAET_ID' );
+  table.colName     = await Object.keys(db.tables[tablename]);
+  table.zustandName = await db.getColumn("ZUSTAND", 'ZUSTAND_NAME' );
+  table.tart        = await db.getColumn("TRANSAKTIONSART", 'T_NAME' );
+
+  let ma          = await db.getColumns("MITARBEITER", ['MA_VORNAME', 'MA_NACHNAME']  );
+  ma = await db.transpose(ma);
   table.ma = [];
-  table.geraetID = [];
-  table.colName = [];
-  table.zustandName = [];
-  table.tart = [];
+  for (const value of ma.values){
+      table.ma.push(value[0] + " " +value[1])
+  }
 
-  var sqlReq1 = 'Select ARTIKEL_ART_NAME From ARTIKEL_ART';
-  var sqlReq2 = 'Select ARTIKEL_NAME From ARTIKEL';
-  var sqlReq3 = 'Select FIRMA_NAME From FIRMA';
-  var sqlReq4 = 'Select MA_VORNAME, MA_NACHNAME From MITARBEITER';
-  var sqlReq5 = 'Select GERAET_ID From GERAET';
-  var sqlReq6 = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='" + input.tablename+ "';";
-  var sqlReq7 = "SELECT ZUSTAND_NAME FROM ZUSTAND";
-  var sqlReq8 = "SELECT T_NAME FROM TRANSAKTIONSART";
-
-  var promises = [];
-
-    promises.push(RetrieveFromDb(sqlReq1, res).then(function (data) {
-      data.recordset.forEach(function (art) {
-        table.artikelArt.push(art['ARTIKEL_ART_NAME']);
-      })
-    }));
-
-  promises.push(RetrieveFromDb(sqlReq2, res).then(function (data) {
-      data.recordset.forEach(function (art) {
-        table.artikel.push(art['ARTIKEL_NAME']);
-      })
-    }));
-
-  promises.push(RetrieveFromDb(sqlReq3, res).then(function (data) {
-    data.recordset.forEach(function (art) {
-      table.firma.push(art['FIRMA_NAME']);
-    })
-  }));
-
-  promises.push(RetrieveFromDb(sqlReq4, res).then(function (data) {
-    data.recordset.forEach(function (art) {
-      table.ma.push(art['MA_VORNAME'] + " " + art['MA_NACHNAME'] );
-    })
-  }));
-
-  promises.push(RetrieveFromDb(sqlReq5, res).then(function (data) {
-    data.recordset.forEach(function (art) {
-      table.geraetID.push(art['GERAET_ID'] );
-    })
-  }));
-
-  promises.push(RetrieveFromDb(sqlReq6, res).then(function (data) {
-    data.recordset.forEach(function (art) {
-      table.colName.push(art['COLUMN_NAME'] );
-    })
-  }));
-
-  promises.push(RetrieveFromDb(sqlReq7, res).then(function (data) {
-    data.recordset.forEach(function (art) {
-      table.zustandName.push(art['ZUSTAND_NAME'] );
-    })
-  }));
-
-  promises.push(RetrieveFromDb(sqlReq8, res).then(function (data) {
-    data.recordset.forEach(function (art) {
-      table.tart.push(art['T_NAME'] );
-    })
-  }));
+  let trans = await table.values.transpose();
+  table.values = trans.values;
+  table.keys = trans.keys;
 
 
-  var sqlReq = 'Select * From ' + input.tablename + ";";
-  console.log(sqlReq);
-  promises.push(RetrieveFromDb(sqlReq, res).then(function (f) {
-       input.recordset = f.recordset;
-  }));
-
-  Promise.all(promises).then(function () {
-    var arr = {};
-
-    if ( input.recordset.length === 0) {
-      arr.head = [];
-      arr.values = [];
-      table.colName.forEach(function (colName) {
-        arr.head.push(colName);
-      })
-      //console.log(arr)
-    } else {
-      arr = objToArr(input.recordset );
-    }
-    // console.log(table);
     res.render('enterValues',
         {
           href: 'stylesheets/table.css',
           title: 'table',
-          tablename: input.tablename,
-          head: arr.head,
-          values: arr.values,
+          tablename: tablename,
+          keys: table.keys,
+          values: table.values,
           table: table
         });
-  });
 
 });
 
@@ -388,8 +260,7 @@ router.post('/confirmation', async (req, res, next) => {
 });
 
 router.get('/sql', async (req, res) => {
-  const db = new DB(config);
-  await db.init(config);
+
   console.log("")
   //await db.loadColumn("ZUSTAND", "ZUSTAND_ID")
 
