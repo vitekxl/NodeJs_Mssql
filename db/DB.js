@@ -109,9 +109,29 @@ class DB{
          };
 
          this.insertRequest= async (table, keys, values) => {
-             var sql  = `INSERT INTO ${table}${keys} VALUES ${values};`;
+             var sql  = `INSERT INTO ${table}(${keys.join(", ")}) VALUES (${values.join(", ")});`;
              await this.makeTransaction(sql);
+             await this.setActualStateFalse(table);
+
+         };
+         this.deleteRequest = async (table, where) => {
+             var sql  = `delete from ${table} where ${where}`;
+             await this.makeTransaction(sql);
+             await this.setActualStateFalse(table);
+             for (const fkey of this.tables[table].foreignKeys){
+
+             }
+
          }
+
+         this.setActualStateFalse = async (table) => {
+            for(const key of this.tables[table].keys){
+                this.tables[table][key].isActual = false;
+            }
+            console.log(this.tables[table]);
+         };
+
+
 
           this.makeTransaction = async (sqlReq) =>{
 
@@ -128,7 +148,6 @@ class DB{
                      }
                  );
              });
-
          }
 
     }
@@ -199,13 +218,10 @@ class DB{
                              );
                          }
                      }
-
                      return res;
                  }
              }
-
          })
-
     }
 
     async RetrieveFromDb(sqlReq, res){
