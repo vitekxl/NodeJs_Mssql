@@ -171,16 +171,32 @@ class DB{
 
                  await _this.RetrieveFromDb(getAllInfo).then(function (data) {
 
+                    // console.log(data.recordsets[6]);
+
                      for (const set of data.recordsets[1]) {
                          tables[table].keys.push(set["Column_name"]);
                          tables[table][set["Column_name"]] = {values: [], isActual: false};
                      }
                      for (const set of data.recordsets[6]) {
+                       //  console.log(set);
+                        // console.log(" ");
+
                          if (set["constraint_type"] === 'FOREIGN KEY') {
-                             tables[table].foreignKeys.push(set["constraint_keys"]);
+                             tables[table].foreignKeys.push({key: set["constraint_keys"], refTable: "", updateAction: set.update_action, deleteAction: set.delete_action });
                          }
                          else if(set["constraint_type"].match('PRIMARY KEY')){
                              tables[table].primaryKey = set["constraint_keys"];
+                         }
+                         else if(set["constraint_keys"].match('REFERENCES')){
+                             var mess = set["constraint_keys"];
+                             mess = mess.split( RegExp("\[(*?)\]") );
+                             var key = mess[1];
+                             var tablename = mess[0].split(RegExp("\w*dbo."))[1];
+
+                             console.log(`key = ${key}, table = ${tablename}`);
+                             tables[table].foreignKeys[tables[table].foreignKeys.length-1].refTable = tablename;
+
+
                          }
                      }
                      tables[table].ownKeys = tables[table].keys.filter(function (value) {
@@ -222,6 +238,7 @@ class DB{
                  }
              }
          })
+        console.log(_this.tables['TRANSAKTION']);
     }
 
     async RetrieveFromDb(sqlReq, res){
