@@ -1,5 +1,17 @@
 extends layout
+block script
+    script.
+        window.onload = function () {
+            var artikelArtSelector = document.getElementById("artikelArtSelector-geraet");
+            var artikelSelector = "{{ tablename }}"
 
+            console.log(artikelSelector);
+            artikelArtSelector.addEventListener("change", function () {
+                let value = artikelArtSelector.value;
+                console.log(value);
+            });
+
+        };
 
 block content
     .main.container
@@ -15,11 +27,11 @@ block content
                             label(for='Z-Name') Zustand name:
                             input#Z-name.form-control(type='text' placeholder='Zustand' name='zustandName' required)
                         else if tablename === 'ARTIKEL_ART'
-                            label(for='Z-Name') Artikel art:
-                            input#Z-name.form-control(type='text' placeholder='Artikel_Art' name='artikelArt' required)
+                            label(for='AA-Name') Artikel art:
+                            input#AA-name.form-control(type='text' placeholder='Artikel_Art' name='artikelArt' required)
                         else if tablename === 'ARTIKEL'
                             label(for='AA-Name') ARTIKEL_ART:
-                            select#Artike-lArt(name = 'artikelArt')
+                            select#ArtikelArtSelector(name = 'artikelArt')
                                 each item in table.artikelArt
                                     option=item
                             br
@@ -30,18 +42,30 @@ block content
                             input#Z-name.form-control(type='text' placeholder='Anzahlt' name='anzahl' required)
                         else if tablename === 'GERAET'
                             label(for='G-Id') ARTIKEL ART:
-                                select#ArtikelArt(name = 'artikelArt')
+                                select#artikelArtSelector-geraet(name = 'artikelArt')
                                     each item in table.artikelArt
                                         option=item
                                 br
 
                             label(for='G-Id') ARTIKEL:
-                            select#Artikel(name = 'artikelName')
-                                each item in table.artikel
-                                    option=item
-                            br
+                                select#artikelSelector-geraet(name = 'artikelName')
+                                    script.
+                                        html = "";
+                                        obj = {
+                                            "1": "Name",
+                                            "2": "Age",
+                                            "3": "Gender"
+                                        }
+                                        var name = '!{table}';
+                                        console.log( name );
+
+                                        for (var key in obj) {
+                                            html += "<option value=" + key + ">" + obj[key] + "</option>"
+                                        }
+                                        document.getElementById("artikelSelector-geraet").innerHTML = html;
+                                br
                             label(for='G-Id') Zustand:
-                                select#Artikel(name = 'zustandName')
+                                select#ZustandSelector(name = 'zustandName')
                                     each item in table.zustandName
                                         option=item
                                 br

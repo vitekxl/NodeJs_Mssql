@@ -8,7 +8,7 @@ var DB = require("../db/DB");
 
 var config = {
   user: 'sa',
-  password: 'Prizma1994!',
+  password: 'SQLSyskron2019!',
   server: 'localhost',
   database: 'TestDB'
 };
@@ -47,6 +47,8 @@ router.post('/r', async (req, res) => {
   let table = {};
   table.values      = await db.getTable(req.body['tableName']);
 
+
+
   table.artikelArt  = await db.getColumn("ARTIKEL_ART", 'ARTIKEL_ART_NAME' );
   table.artikel     = await db.getColumn("ARTIKEL", 'ARTIKEL_NAME' );
   table.firma       = await db.getColumn("FIRMA", 'FIRMA_NAME' );
@@ -55,17 +57,66 @@ router.post('/r', async (req, res) => {
   table.zustandName = await db.getColumn("ZUSTAND", 'ZUSTAND_NAME' );
   table.tart        = await db.getColumn("TRANSAKTIONSART", 'T_NAME' );
 
-  let ma          = await db.getColumns("MITARBEITER", ['MA_VORNAME', 'MA_NACHNAME']  );
-  ma = await db.transpose(ma);
-  table.ma = [];
-  for (const value of ma.values){
-      table.ma.push(value[0] + " " +value[1])
+  switch (tablename) {
+      case 'ARTIKEL':
+          var sqlreq = "SELECT ARTIKEL_ID, ARTIKEL_NAME AS ARTIKEL, ARTIKEL_ART_NAME AS ARTIKEL_ART, ANZAHL_AUF_LAGER  from ARTIKEL Join ARTIKEL_ART AA on ARTIKEL.ARTIKEL_ART_ID = AA.ARTIKEL_ART_ID"
+          var result=  await db.selectRequest(sqlreq);
+          result = await db.transpose(result);
+          table.values = result.values;
+          table.keys = result.keys;
+          break;
+      case 'GERAET':
+          var sqlreq = "Select GERAET_ID, ARTIKEL_NAME AS ARTIKEL, ZUSTAND_NAME as ZUSTAND, IST_AUF_LAGER from GERAET join ARTIKEL A on GERAET.ARTIKEL_ID = A.ARTIKEL_ID join ZUSTAND Z on GERAET.ZUSTAND_ID = Z.ZUSTAND_ID"
+          var result=  await db.selectRequest(sqlreq);
+          result = await db.transpose(result);
+          table.values = result.values;
+          table.keys = result.keys;
+          break;
+      case 'MITARBEITER':
+          var sqlreq = "Select K_NUMMER, MA_VORNAME AS VORNAME, MA_NACHNAME AS NACHNAME, FIRMA_NAME AS FIRMA from MITARBEITER join FIRMA F on MITARBEITER.FIRMA_ID = F.FIRMA_ID";
+          var result=  await db.selectRequest(sqlreq);
+          result = await db.transpose(result);
+          table.values = result.values;
+          table.keys = result.keys;
+          break;
+      case 'TRANSAKTION':
+          let ma = await db.getColumns("MITARBEITER", ['MA_VORNAME', 'MA_NACHNAME']);
+          ma = await db.transpose(ma);
+          table.ma = [];
+          for (const value of ma.values) {
+              table.ma.push(value[0] + " " + value[1])
+          }
+
+          var sqlreq = "SELECT\n" +
+              "       TRANSAKTION_ID,\n" +
+              "       MA_1,\n" +
+              "       CONCAT( M1.MA_VORNAME, M1.MA_NACHNAME) as M1_name,\n" +
+              "       MA_2,\n" +
+              "       CONCAT( ISNULL(M2.MA_VORNAME, NULL), ISNULL(M2.MA_NACHNAME, NULL)) as M2_name,\n" +
+              "       TRANSAKTION.GERAET_ID,\n" +
+              "       T.T_NAME as TRANSAKTION_NAME,\n" +
+              "       IST_AKTUEL, BESCHREIBUNG,\n" +
+              "       DATUM\n" +
+              "\n" +
+              "from TRANSAKTION\n" +
+              "    left join MITARBEITER M2 on TRANSAKTION.MA_2 = M2.K_NUMMER\n" +
+              "    join TRANSAKTIONSART T on TRANSAKTION.TRANSAKTION_ART_ID = T.T_ART_ID\n" +
+              "    join MITARBEITER M1 on TRANSAKTION.MA_1 = M1.K_NUMMER\n" +
+              "    join GERAET G on TRANSAKTION.GERAET_ID = G.GERAET_ID\n".replace(/\n/, '');
+          var result=  await db.selectRequest(sqlreq);
+          result = await db.transpose(result);
+          table.values = result.values;
+          table.keys = result.keys;
+          break;
+      default:
+          let trans = await table.values.transpose();
+          table.values = trans.values;
+          table.keys = trans.keys;
+          break;
+
   }
 
-  let trans = await table.values.transpose();
-  table.values = trans.values;
-  table.keys = trans.keys;
-
+  //console.log(db.tables[tablename]);
 
     res.render('enterValues',
         {
@@ -92,6 +143,7 @@ router.post('/confirmation', async (req, res) => {
       case 'TRANSAKTIONSART':   await db.insertRequest(table, ['T_NAME'], [`'${req.body.transart.trim()}'`]); break;
       case 'FIRMA'          :   await db.insertRequest(table, ['FIRMA_NAME'], [`'${req.body.firmaName.trim()}'`]); break;
       case 'ARTIKEL'        :
+          console.log('hi')
           let id = await db.selectRequest(`Select ARTIKEL_ART_ID from ARTIKEL_ART WHERE ARTIKEL_ART_NAME='${req.body.artikelArt}';`);
             console.log(id);
           id = id.pop()['ARTIKEL_ART_ID'];
@@ -176,9 +228,6 @@ router.post('/confirmation', async (req, res) => {
 
 router.get('/sql', async (req, res) => {
 
-  //await db.loadColumn("ZUSTAND", "ZUSTAND_ID")
-
-  console.log(await db.getColumn("ZUSTAND", "ZUSTAND_ID"));
   res.render('runSql', {text : ""})
 });
 
@@ -191,7 +240,6 @@ router.post('/sql', async (req, res) => {
   let firstword = request.split(' ');
 
   let result = undefined;
-  const pool = await poolPromise;
 
   if(firstword[0].toLowerCase() === 'select'){
     try {
@@ -228,13 +276,13 @@ router.post('/sql', async (req, res) => {
 
 router.get('/search', function (req, res) {
   res.render('search', {elements: ['Geraet', 'Transaktion', 'Mitarbeiter']})
-})
+});
 
 router.post('/search' , function (req, res) {
   var search = req.body.search;
   if(search === 'Mitarbeiter'){
     res.render('searchMA', {})
   }
-})
+});
 
 module.exports = router;

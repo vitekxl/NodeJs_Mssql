@@ -68,6 +68,7 @@ class DB{
 
          this.loadColumn = async (tableName, key) => {
              let table = this.tables[tableName];
+             table[key].values = [];
              let sql = `SELECT ${key} FROM ${tableName};`
 
              if(typeof table === 'undefined'){
@@ -100,7 +101,7 @@ class DB{
          this.transpose = async (rows) => {
              if(rows.length === 0 )return undefined;
             // let table = _this.tables[tableName];
-             let res = { keys:Object.keys(rows), values: [] };
+             let res = { keys:Object.keys(rows[0]), values: [] };
 
              for (const set of rows){
                  res.values.push(Object.values(set));
@@ -117,18 +118,37 @@ class DB{
          this.deleteRequest = async (table, where) => {
              var sql  = `delete from ${table} where ${where}`;
              await this.makeTransaction(sql);
-             await this.setActualStateFalse(table);
-             for (const fkey of this.tables[table].foreignKeys){
+             await this.setActualStateFalseCascade(table, 'delete');
+         };
 
+         this.updateRequest = async (table, set, where) => {
+             var sql  = `update ${table} set ${set} where ${where}`;
+             await this.makeTransaction(sql);
+             await this.setActualStateFalseCascade(table, 'update');
+         };
+
+         this.setActualStateFalseCascade = async (table, action) =>{
+             this.setActualStateFalse(table);
+             action = action.toLowerCase().trim();
+                if(action !== "update" || action !== 'delete')
+                    throw new Error('Unrecognised action :' + action);
+
+             for(let foreignKey of table.foreignKeys){
+                 let actionType = "";
+
+                 if(action === 'update')   actionType = foreignKey.updateAction.toLowerCase();
+                 else                      actionType = foreignKey.deleteAction.toLowerCase();
+
+                 if(actionType === 'cascade'){
+                     this.setActualStateFalseCascade(foreignKey.refTable, action);
+                 }
              }
-
-         }
+         };
 
          this.setActualStateFalse = async (table) => {
             for(const key of this.tables[table].keys){
                 this.tables[table][key].isActual = false;
             }
-            console.log(this.tables[table]);
          };
 
 
@@ -193,7 +213,6 @@ class DB{
                              var key = mess[1];
                              var tablename = mess[0].split(RegExp("\w*dbo."))[1];
 
-                             console.log(`key = ${key}, table = ${tablename}`);
                              tables[table].foreignKeys[tables[table].foreignKeys.length-1].refTable = tablename;
 
 
@@ -238,7 +257,6 @@ class DB{
                  }
              }
          })
-        console.log(_this.tables['TRANSAKTION']);
     }
 
     async RetrieveFromDb(sqlReq, res){
