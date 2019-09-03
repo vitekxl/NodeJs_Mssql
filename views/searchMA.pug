@@ -1,29 +1,85 @@
 extends layout
 
+block script
+    script.
+        window.onload = function () {
+            var firmaCB = document.getElementById('Firma-name-checkbox');
+            var maCB    = document.getElementById('MA-ID-checkbox');
+            var vnameCB = document.getElementById('MA-VName-checkbox');
+            var nnameCB = document.getElementById('MA-NName-checkbox');
+
+            var firmaInput = document.getElementById('Firma-name');
+            var vnameInput = document.getElementById('MA-VName');
+            var nnameInput = document.getElementById('MA-NName');
+
+            let event = function () {
+                if (maCB.checked) {
+                    firmaCB.disabled = true;
+                    vnameCB.disabled = true;
+                    nnameCB.disabled = true;
+                    firmaInput.disabled = true;
+                    vnameInput.disabled = true;
+                    nnameInput.disabled = true;
+
+                } else {
+                    firmaCB.disabled = false;
+                    vnameCB.disabled = false;
+                    nnameCB.disabled = false;
+                    firmaInput.disabled = false;
+                    vnameInput.disabled = false;
+                    nnameInput.disabled = false;
+                }
+            }
+
+            event()
+
+
+
+
+            maCB.addEventListener('change', function () {
+                event()
+            })
+
+        }
+
+
 block content
+    form(method='POST' action='/searchMA')
 
-        label(for='Firma-name') FIRMA NANE:
-            select#Firma-name(name = 'firmaName')
-                option unselected
-                each item in table.firma
-                    option=item
+        input#Firma-name-checkbox.form-control(type='checkbox' name='firmaCB')
+        label(for='Firma-name') FIRMA NAME:
+                select#Firma-name(name = 'firmaName')
+                    option unselected
+                    each item in table.firma
+                        option=item
         br
+
+        input#MA-ID-checkbox.form-control(type='checkbox' name='maCB')
         label(for='MA-ID') K-nummer:
-        input#MA-ID.form-control(type='text' placeholder='K-Nummer' name='maID' required)
+        input#MA-ID.form-control(type='text' placeholder='K-Nummer' name='maID' )
         br
-        label(for='MA-VName') Vorname:
-        input#MA-VName.form-control(type='text' placeholder='MA Vorname' name='maVname' required)
-        br
-        label(for='MA-NName') Nachname:
-        input#MA-NName.form-control(type='text' placeholder='MA Nachname' name='maNname' required)
 
+        input#MA-VName-checkbox.form-control(type='checkbox' name='vnameCB')
+        label(for='MA-VName') Vorname:
+        input#MA-VName.form-control(type='text' placeholder='MA Vorname' name='maVname' )
+        br
+
+        input#MA-NName-checkbox.form-control(type='checkbox'  name='nnameCB')
+        label(for='MA-NName') Nachname:
+        input#MA-NName.form-control(type='text' placeholder='MA Nachname' name='maNname' )
+        br
+
+        input#tableName(type='hidden' name='search' value='MITARBEITER')
+        button.btn.btn-primary(type='submit') Search
 
         div.main-table
             table
                 tr
                 each th_text in head
                     th=th_text
-                -for(var i = 0; i<values.length; i++)
+
+                -var length = typeof values === 'undefined' ? 0 : values.length;
+                -for(let i = 0; i<length; i++)
                     tr
                     each td_text in values[i]
                         td=td_text

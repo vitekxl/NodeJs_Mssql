@@ -1,7 +1,6 @@
 extends layout
 block script
     script.
-
         window.onload = function () {
 
 
@@ -28,7 +27,7 @@ block script
                 let cnt = 1;
                 for (const set of artikelArr) {
                     if (set['ARTIKEL_ART_NAME'] === value) {
-                        artikelSelector.options[artikelSelector.options.length] = new Option(set['ARTIKEL_NAME'], `value ${cnt}`)
+                        artikelSelector.options[artikelSelector.options.length] = new Option(set['ARTIKEL_NAME'], set['ARTIKEL_NAME'])
                     }
                 }
             }
@@ -69,13 +68,13 @@ block content
                             label(for='Anzahl') Anzahl auf der Lager:
                             input#Z-name.form-control(type='text' placeholder='Anzahlt' name='anzahl' required)
                         else if tablename === 'GERAET'
-                            label(for='G-Id') ARTIKEL ART:
+                            label(for='artikelArtSelector-geraet') ARTIKEL ART:
                                 select#artikelArtSelector-geraet(name = 'artikelArt')
                                     each item in table.artikelArt
                                         option=item
                                 br
 
-                            label(for='G-Id') ARTIKEL:
+                            label(for='artikelSelector-geraet') ARTIKEL:
                                 select#artikelSelector-geraet(name = 'artikelName')
                                 br
                             label(for='G-Id') Zustand:

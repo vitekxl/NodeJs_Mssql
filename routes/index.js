@@ -1,14 +1,20 @@
 var express = require('express');
 var router = express.Router();
 var sql = require("mssql");
-
 var DB = require("../db/DB");
+var logger = require('morgan');
 
 
+
+var redirect = function (res, path) {
+    var http =  'http://localhost:3000/';
+    console.log("redirect => " + http + path);
+    res.redirect(http + path);
+}
 
 var config = {
   user: 'sa',
-  password: 'Prizma1994!',
+  password: 'SQLSyskron2019!',
   server: 'localhost',
   database: 'TestDB'
 };
@@ -28,7 +34,10 @@ const poolPromise = new sql.ConnectionPool(config)
 
 
 router.get('/', async (req, res) => {
-    res.render('index', { title: 'Express' });
+    res.redirect('http://localhost:3000/sql')
+    return ;
+
+   // res.render('index', { title: 'Express' });
 });
 
 
@@ -217,21 +226,10 @@ router.post('/confirmation', async (req, res) => {
 
   res.render("confirmation");
 
-  //await console.log("-> " + sqlreq);
-//  await makeTransaction(sqlreq,res ,req);
-
-/*  var json = {'tableName' : 'FIRMA'};
-  request.post({
-    url: 'http://localhost:3000/r',
-    body: json,
-    json: true
-  }, function (err, res, body) {
-
-  })*/
-
 });
 
 router.get('/sql', async (req, res) => {
+
 
   res.render('runSql', {text : ""})
 });
@@ -279,17 +277,127 @@ router.post('/sql', async (req, res) => {
   res.render('runSql', {answer: message})
 });
 
+router.get('/searchG', async (req, res) => {
+
+    let table = {
+        artikelArt : await db.getColumn("ARTIKEL_ART", 'ARTIKEL_ART_NAME'),
+        artikel : await db.getColumn("ARTIKEL", 'ARTIKEL_NAME'),
+        artikel_join : await db.selectRequest("Select ARTIKEL_ART_NAME , ARTIKEL_NAME from ARTIKEL_ART join ARTIKEL A on ARTIKEL_ART.ARTIKEL_ART_ID = A.ARTIKEL_ART_ID"),
+        geraetID : await db.getColumn("GERAET", 'GERAET_ID'),
+        zustandName : await db.getColumn("ZUSTAND", 'ZUSTAND_NAME' ),
+
+    };
+    table.artikel_join = JSON.stringify(table.artikel_join);
+    res.render('searchG', {table: table, head: db.tables['GERAET'].keys, values: [], href: 'stylesheets/table.css'})
+
+});
+
+router.post('/searchG', async (req, res) => {
+    console.log(req.body);
+    let where = "";
+
+    let Geraet = {
+        artikelArt  : req.body.artikelArt   === 'unselected' ? undefined: req.body.artikelArt,
+        artikelName : req.body.artikelName  === 'unselected' ? undefined: req.body.artikelName,
+        zustandName : req.body.zustandName  === 'unselected' ? undefined: req.body.zustandName ,
+        geraetID    : req.body.geraetID     === '' ? undefined: req.body.geraetID,
+        isAufLager  : typeof req.body.isAufLager  === 'undefined' ? 0: 1,
+    };
+
+    if(typeof Geraet.geraetID !== "undefined"){
+        where = `GERAET_ID=${Geraet.geraetID}`;
+    }
+
+
+
+    let sql = `Select GERAET_ID, ARTIKEL_NAME, ZUSTAND_NAME, IST_AUF_LAGER From GERAET join ZUSTAND Z on GERAET.ZUSTAND_ID = Z.ZUSTAND_ID join ARTIKEL A on GERAET.ARTIKEL_ID = A.ARTIKEL_ID where ${where};`
+
+});
+
+
+
+
 router.get('/search', function (req, res) {
   res.render('search', {elements: ['Geraet', 'Transaktion', 'Mitarbeiter']})
 });
 
+router.get('/searchMA', async (req, res) => {
+    console.log(req.body)
+    let table = {};
+    table.firma = await db.getColumn("FIRMA", "FIRMA_NAME");
+    table.keys = ['K_NUMMER', 'MA_VORNAME', 'MA_NACHNAME', 'FIRMA_NAME'];
+    res.render('searchMA', {table: table, head: table.keys, values: [], href: 'stylesheets/table.css'})
+
+});
+
+router.post('/searchMA', async (req, res) => {
+    let table = {};
+    console.log(req.body)
+    table.firma = await db.getColumn("FIRMA", "FIRMA_NAME");
+    table.values = [];
+    let MA = {
+        firma:  req.body.firmaName === 'unselected' ? undefined : req.body.firmaName,
+        id:     req.body.maID === '' ? undefined : req.body.maID,
+        vname:  req.body.maVname === '' ? undefined : req.body.maVname,
+        nname:  req.body.maNname === '' ? undefined : req.body.maNname,
+        firmaCB: typeof req.body.firmaCB    !== "undefined",
+        vnameCB: typeof req.body.vnameCB    !== "undefined",
+        nnameCB: typeof req.body.nnameCB    !== "undefined",
+        maCB:    typeof req.body.maCB       !== "undefined",
+    };
+
+    let beginSearch = false;
+    for (const key of Object.keys(MA)) {
+        if (typeof MA[key] !== 'undefined') {
+            beginSearch = true;
+            break;
+        }
+    }
+
+    if (beginSearch) {
+        let where = "";
+        if (typeof MA.id !== 'undefined') {
+            where = `K_NUMMER='${MA.id}'`
+        } else if (typeof MA.firma !== 'undefined') {
+            let firmaid = await db.selectRequest(`select FIRMA_ID from FIRMA where FIRMA_NAME='${MA.firma}'`);
+            console.log(firmaid);
+            firmaid = firmaid.pop()['FIRMA_ID'];
+            where = `F.FIRMA_ID = ${firmaid}`;
+        } else {
+            if (typeof MA.vname !== 'undefined' && typeof MA.nname !== 'undefined') {
+                where = `MA_VORNAME LIKE '%${MA.vname}%' AND MA_NACHNAME LIKE '%${MA.nname}%'`
+            } else if (typeof MA.vname !== 'undefined') {
+                where = `MA_VORNAME LIKE '%${MA.vname}%'`
+            } else {
+                where = `MA_NACHNAME LIKE '%${MA.nname}%'`
+            }
+        }
+        let sql = `Select K_NUMMER, MA_VORNAME, MA_NACHNAME, FIRMA_NAME From MITARBEITER join FIRMA F on MITARBEITER.FIRMA_ID = F.FIRMA_ID where ${where} ;`;
+        let result = await db.selectRequest(sql);
+        if (typeof result === 'undefined') {
+            table.values.values = [];
+        } else {
+            table.values = await db.transpose(result);
+        }
+    }
+
+    table.keys = ['K_NUMMER', 'MA_VORNAME', 'MA_NACHNAME', 'FIRMA_NAME'];
+
+    table.firma = await db.getColumn("FIRMA", "FIRMA_NAME");
+    res.render('searchMA', {table: table, head: table.keys, values: table.values.values, href: 'stylesheets/table.css'})
+
+});
+
+
+
+
 router.post('/search' , async (req, res) => {
-  var search = req.body.search;
-  let table = {};
-  if(search === 'Mitarbeiter'){
-      table.firma = await db.getColumn("FIRMA", "FIRMA_NAME");
-    res.render('searchMA', {table: table, head: db.tables['MITARBEITER'].keys, values: [], href: 'stylesheets/table.css'} )
-  }
+  var search = req.body.search.toLowerCase();
+    switch (search) {
+         case 'mitarbeiter':    redirect(res, 'searchMA'); break;
+        case 'geraet':          redirect(res, 'searchG' ); break;
+        case 'transaktion':     redirect(res, 'searchT' ); break;
+    }
 });
 
 module.exports = router;

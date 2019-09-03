@@ -1,0 +1,77 @@
+extends layout
+
+block script
+        script.
+            window.onload = function () {
+
+                let artikelArtSelector =  document.getElementById("artikelArtSelector-geraet");
+                let artikelSelector = document.getElementById("artikelSelector-geraet");
+                let artikelArr = JSON.parse(`!{table.artikel_join}`);
+
+                artikelSelector.disabled = true;
+
+                var createAASelect = function (artikelSelector, value) {
+                    while (artikelSelector.options.length !== 0) {
+                        artikelSelector.options.remove(0);
+                    }
+                    let cnt = 1;
+                    for (const set of artikelArr) {
+                        if (set['ARTIKEL_ART_NAME'] === value) {
+                            artikelSelector.options[artikelSelector.options.length] = new Option(set['ARTIKEL_NAME'], set['ARTIKEL_NAME'])
+                        }
+                    }
+                }
+
+                createAASelect(artikelSelector, artikelArtSelector.value);
+
+                artikelArtSelector.addEventListener("change", function () {
+                    createAASelect(artikelSelector, artikelArtSelector.value);
+
+                    if(artikelArtSelector.value === 'unselected'){
+                        artikelSelector.disabled = true;
+                    }
+                    else {
+                        artikelSelector.disabled = false;
+                    }
+                });
+
+            };
+
+block content
+    form(method='POST' action='/searchG')
+
+        label(for='artikelArtSelector-geraet') ARTIKEL ART:
+            select#artikelArtSelector-geraet(name = 'artikelArt')
+                option unselected
+                each item in table.artikelArt
+                    option=item
+            br
+
+        label(for='artikelSelector-geraet') ARTIKEL:
+            select#artikelSelector-geraet(name = 'artikelName')
+            br
+        label(for='ZustandSelector') Zustand:
+            select#ZustandSelector(name = 'zustandName')
+                option unselected
+                each item in table.zustandName
+                    option=item
+            br
+        label(for='Z-Name') Geraet ID:
+        input#Z-name.form-control(type='text' placeholder='Geraet ID' name='geraet_ID' )
+        br
+        label(for='Anzahl') Vorhanden auf der Lager:
+        input#Anzahl.form-control(type='checkbox' placeholder="Vorhandensein" name='isAufLager')
+        br
+        button.btn.btn-primary(type='submit') Search
+
+        div.main-table
+            table
+                tr
+                each th_text in head
+                    th=th_text
+
+                -var length = typeof values === 'undefined' ? 0 : values.length;
+                -for(let i = 0; i<length; i++)
+                    tr
+                    each td_text in values[i]
+                        td=td_text

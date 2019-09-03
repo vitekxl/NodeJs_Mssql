@@ -88,7 +88,8 @@ class DB{
          this.selectRequest =   async (slqRequest) => {
              var res= undefined;
              await this.RetrieveFromDb(slqRequest).then(function (result) {
-                 res = result.recordset;
+                 if(result.rowsAffected.pop() === 0) res = undefined;
+                 else res = result.recordset;
              });
              return res;
          }
