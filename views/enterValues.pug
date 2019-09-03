@@ -1,14 +1,42 @@
 extends layout
 block script
     script.
-        window.onload = function () {
-            var artikelArtSelector = document.getElementById("artikelArtSelector-geraet");
-            var artikelSelector = "{{ tablename }}"
 
-            console.log(artikelSelector);
+        window.onload = function () {
+
+
+            let artikelArtSelector = undefined;
+            let artikelSelector =  undefined;
+
+            let tablename = '!{tablename}';
+            if(tablename === 'GERAET') {
+                artikelArtSelector =  document.getElementById("artikelArtSelector-geraet");
+                artikelSelector = document.getElementById("artikelSelector-geraet");
+            }else if(tablename === 'TRANSAKTION'){
+                artikelArtSelector= document.getElementById("artikelArtSelector-trans");
+                artikelSelector = document.getElementById("artikelSelector-trans");
+            }
+            else {
+                return;
+            }
+            let artikelArr = JSON.parse(`!{table.artikel_join}`);
+
+            var createAASelect = function (artikelSelector, value) {
+                while (artikelSelector.options.length !== 0) {
+                    artikelSelector.options.remove(0);
+                }
+                let cnt = 1;
+                for (const set of artikelArr) {
+                    if (set['ARTIKEL_ART_NAME'] === value) {
+                        artikelSelector.options[artikelSelector.options.length] = new Option(set['ARTIKEL_NAME'], `value ${cnt}`)
+                    }
+                }
+            }
+
+            createAASelect(artikelSelector, artikelArtSelector.value);
+
             artikelArtSelector.addEventListener("change", function () {
-                let value = artikelArtSelector.value;
-                console.log(value);
+               createAASelect(artikelSelector, artikelArtSelector.value);
             });
 
         };
@@ -49,20 +77,6 @@ block content
 
                             label(for='G-Id') ARTIKEL:
                                 select#artikelSelector-geraet(name = 'artikelName')
-                                    script.
-                                        html = "";
-                                        obj = {
-                                            "1": "Name",
-                                            "2": "Age",
-                                            "3": "Gender"
-                                        }
-                                        var name = '!{table}';
-                                        console.log( name );
-
-                                        for (var key in obj) {
-                                            html += "<option value=" + key + ">" + obj[key] + "</option>"
-                                        }
-                                        document.getElementById("artikelSelector-geraet").innerHTML = html;
                                 br
                             label(for='G-Id') Zustand:
                                 select#ZustandSelector(name = 'zustandName')
@@ -114,15 +128,14 @@ block content
                                         option=item
                             br
                             label(for='G-Id') ARTIKEL ART:
-                                select#ArtikelArt(name = 'artikelArt')
+                                select#artikelArtSelector-trans(name = 'artikelArt')
                                     each item in table.artikelArt
                                         option=item
                                 br
 
                             label(for='G-Id') ARTIKEL:
-                            select#Artikel(name = 'artikelName')
-                                each item in table.artikel
-                                    option=item
+                            select#artikelSelector-trans(name = 'artikelName')
+
                             br
                             label(for='GERAET_ID') GERAET:
                                 select#GERAET_ID(name = 'gerateName')

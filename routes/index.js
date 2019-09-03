@@ -8,7 +8,7 @@ var DB = require("../db/DB");
 
 var config = {
   user: 'sa',
-  password: 'SQLSyskron2019!',
+  password: 'Prizma1994!',
   server: 'localhost',
   database: 'TestDB'
 };
@@ -51,11 +51,16 @@ router.post('/r', async (req, res) => {
 
   table.artikelArt  = await db.getColumn("ARTIKEL_ART", 'ARTIKEL_ART_NAME' );
   table.artikel     = await db.getColumn("ARTIKEL", 'ARTIKEL_NAME' );
+  table.artikel_join = await db.selectRequest("Select ARTIKEL_ART_NAME , ARTIKEL_NAME from ARTIKEL_ART join ARTIKEL A on ARTIKEL_ART.ARTIKEL_ART_ID = A.ARTIKEL_ART_ID");
   table.firma       = await db.getColumn("FIRMA", 'FIRMA_NAME' );
   table.geraetID    = await db.getColumn("GERAET", 'GERAET_ID' );
   table.colName     = await Object.keys(db.tables[tablename]);
   table.zustandName = await db.getColumn("ZUSTAND", 'ZUSTAND_NAME' );
   table.tart        = await db.getColumn("TRANSAKTIONSART", 'T_NAME' );
+
+  console.log(table.artikel_join);
+
+  table.artikel_join = JSON.stringify(table.artikel_join);
 
   switch (tablename) {
       case 'ARTIKEL':
@@ -278,10 +283,12 @@ router.get('/search', function (req, res) {
   res.render('search', {elements: ['Geraet', 'Transaktion', 'Mitarbeiter']})
 });
 
-router.post('/search' , function (req, res) {
+router.post('/search' , async (req, res) => {
   var search = req.body.search;
+  let table = {};
   if(search === 'Mitarbeiter'){
-    res.render('searchMA', {})
+      table.firma = await db.getColumn("FIRMA", "FIRMA_NAME");
+    res.render('searchMA', {table: table, head: db.tables['MITARBEITER'].keys, values: [], href: 'stylesheets/table.css'} )
   }
 });
 
