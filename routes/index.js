@@ -14,7 +14,7 @@ var redirect = function (res, path) {
 
 var config = {
   user: 'sa',
-  password: 'Prizma1994!',
+  password: 'SQLSyskron2019!',
   server: 'localhost',
   database: 'TestDB'
 };
@@ -288,29 +288,85 @@ router.get('/searchG', async (req, res) => {
 
     };
     table.artikel_join = JSON.stringify(table.artikel_join);
-    res.render('searchG', {table: table, head: db.tables['GERAET'].keys, values: [], href: 'stylesheets/table.css'})
+
+    var keys = ['GERAET_ID', 'ARTIKEL_NAME', 'ARTIKEL_ART_NAME', 'ZUSTAND_NAME', 'IST_AUF_LAGER'];
+
+    res.render('searchG', {table: table, head: keys, values: [], href: 'stylesheets/table.css'})
 
 });
 
 router.post('/searchG', async (req, res) => {
     console.log(req.body);
     let where = "";
-
+    let values = {};
     let Geraet = {
-        artikelArt  : req.body.artikelArt   === 'unselected' ? undefined: req.body.artikelArt,
-        artikelName : req.body.artikelName  === 'unselected' ? undefined: req.body.artikelName,
-        zustandName : req.body.zustandName  === 'unselected' ? undefined: req.body.zustandName ,
-        geraetID    : req.body.geraetID     === '' ? undefined: req.body.geraetID,
-        isAufLager  : typeof req.body.isAufLager  === 'undefined' ? 0: 1,
+        artikelArt  : req.body.artikelArt   === 'unselected' ? undefined : req.body.artikelArt,
+        artikelName : req.body.artikelName  === 'unselected' ? undefined : req.body.artikelName,
+        zustandName : req.body.zustandName  === 'unselected' ? undefined : req.body.zustandName ,
+        geraetID    : req.body.geraetID     === '' ? undefined : req.body.geraetID,
+        isAufLager      : typeof req.body.isAufLager    !== 'undefined' ? 1 : 0,
+
+        artikelArtCB    : typeof req.body.artikelArtCB  !== "undefined",
+        artikelCB       : typeof req.body.artikelCB     !== "undefined",
+        zustandCB       : typeof req.body.zustandCB     !== "undefined",
+        geraeteIdCB     : typeof req.body.geraeteIdCB   !== "undefined",
+        lagerCB         : typeof req.body.lagerCB   !== "undefined",
+
     };
 
     if(typeof Geraet.geraetID !== "undefined"){
         where = `GERAET_ID=${Geraet.geraetID}`;
     }
 
+    if( Geraet.artikelArtCB || Geraet.artikelCB || Geraet.zustandCB || Geraet.geraeteIdCB || Geraet.lagerCB){
+        let where = "";
+        if(Geraet.geraeteIdCB){
+            where = `GERAET_ID='${Geraet.geraetID}'`;
+        }else{
 
+            if(Geraet.artikelCB)          where = `A.ARTIKEL_NAME='${Geraet.artikelName}'`
+            else if(Geraet.artikelArtCB)  where = `AA.ARTIKEL_ART_NAME='${Geraet.artikelArt}'`
 
-    let sql = `Select GERAET_ID, ARTIKEL_NAME, ZUSTAND_NAME, IST_AUF_LAGER From GERAET join ZUSTAND Z on GERAET.ZUSTAND_ID = Z.ZUSTAND_ID join ARTIKEL A on GERAET.ARTIKEL_ID = A.ARTIKEL_ID where ${where};`
+            if(Geraet.zustandCB){
+                if(where !== "") where += " AND ";
+                where += `Z.ZUSTAND_NAME='${Geraet.zustandName}'`;
+            }
+            if(Geraet.lagerCB){
+                if(where !== "") where += " AND ";
+                where += `IST_AUF_LAGER=${Geraet.isAufLager}`;
+            }
+        }
+
+        let sql = `Select GERAET_ID, ARTIKEL_NAME, ARTIKEL_ART_NAME, ZUSTAND_NAME, IST_AUF_LAGER From GERAET join ZUSTAND Z on GERAET.ZUSTAND_ID = Z.ZUSTAND_ID join ARTIKEL A on GERAET.ARTIKEL_ID = A.ARTIKEL_ID join ARTIKEL_ART AA on A.ARTIKEL_ART_ID = AA.ARTIKEL_ART_ID where ${where};`;
+        let result = await db.selectRequest(sql);
+        console.log(result);
+        if (typeof result === 'undefined') {
+            values = [];
+        } else {
+            values = await db.transpose(result);
+            values = values.values;
+        }
+    }
+
+    let table = {
+        artikelArt : await db.getColumn("ARTIKEL_ART", 'ARTIKEL_ART_NAME'),
+        artikel : await db.getColumn("ARTIKEL", 'ARTIKEL_NAME'),
+        artikel_join : await db.selectRequest("Select ARTIKEL_ART_NAME , ARTIKEL_NAME from ARTIKEL_ART join ARTIKEL A on ARTIKEL_ART.ARTIKEL_ART_ID = A.ARTIKEL_ART_ID"),
+        geraetID : await db.getColumn("GERAET", 'GERAET_ID'),
+        zustandName : await db.getColumn("ZUSTAND", 'ZUSTAND_NAME' ),
+
+    };
+    table.artikel_join = JSON.stringify(table.artikel_join);
+
+    var keys = ['GERAET_ID', 'ARTIKEL_NAME', 'ARTIKEL_ART_NAME', 'ZUSTAND_NAME', 'IST_AUF_LAGER'];
+
+    res.render('searchG',
+        {
+            table:  table,
+            head:   keys,
+            values: values,
+            href: 'stylesheets/table.css'
+        })
 
 });
 
@@ -395,7 +451,7 @@ router.post('/search' , async (req, res) => {
   var search = req.body.search.toLowerCase();
     switch (search) {
          case 'mitarbeiter':    redirect(res, 'searchMA'); break;
-        case 'geraet':          redirect(res, 'searchG' ); break;
+         case 'geraet':          redirect(res, 'searchG' ); break;
         case 'transaktion':     redirect(res, 'searchT' ); break;
     }
 });

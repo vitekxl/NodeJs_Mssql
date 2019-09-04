@@ -6,11 +6,20 @@ block script
 
                 let artikelArtSelector =  document.getElementById("artikelArtSelector-geraet");
                 let artikelSelector = document.getElementById("artikelSelector-geraet");
+                let zustandSelector = document.getElementById("zustandSelector");
+                let idInput =          document.getElementById("geraeteId");
+
                 let artikelArr = JSON.parse(`!{table.artikel_join}`);
 
                 artikelSelector.disabled = true;
 
-                var createAASelect = function (artikelSelector, value) {
+                let aaCB = document.getElementById('artikelArtSelector-geraet-checkbox');
+                let aCB = document.getElementById('artikelSelector-geraet-checkbox');
+                let zCB = document.getElementById('zustandSelector-checkbox');
+                let idCb = document.getElementById('geraeteId-checkbox');
+                let lCB = document.getElementById('lager-checkbox');
+
+                let createAASelect = function (artikelSelector, value) {
                     while (artikelSelector.options.length !== 0) {
                         artikelSelector.options.remove(0);
                     }
@@ -23,18 +32,53 @@ block script
                     }
                 }
 
+                let disableAllExceptId = function(isDisable){
+
+                        aaCB.disabled = isDisable;
+                        aCB.disabled = isDisable;
+                        zCB.disabled = isDisable;
+                        lCB.disabled = isDisable;
+                }
+
+                let addListener = function (CB, Input) {
+                    CB.addEventListener('change', function () {
+                        if (CB.checked) {
+                            Input.setAttribute("required", "")
+                            Input.attributes.required = true;
+                        } else {
+                            Input.removeAttribute("required")
+                            Input.attributes.required = false;
+                        }
+                    })
+                }
+
+                aCB.addEventListener('change', function () {
+                    if(aCB.checked) {
+                        aaCB.checked = false;
+                    }
+                })
+                aaCB.addEventListener('change', function () {
+                    if (aaCB.checked) {
+                        aCB.checked = false;
+                    }
+                })
+
+                idCb.addEventListener("change", function () {
+                    disableAllExceptId(idCb.checked);
+                })
+
                 createAASelect(artikelSelector, artikelArtSelector.value);
 
                 artikelArtSelector.addEventListener("change", function () {
                     createAASelect(artikelSelector, artikelArtSelector.value);
-
-                    if(artikelArtSelector.value === 'unselected'){
-                        artikelSelector.disabled = true;
-                    }
-                    else {
-                        artikelSelector.disabled = false;
-                    }
+                    artikelSelector.disabled = artikelArtSelector.value === 'unselected';
+                    aCB.disabled = artikelArtSelector.value === 'unselected';
                 });
+
+                addListener(aaCB, artikelArtSelector);
+                addListener(aCB, artikelSelector);
+                addListener(zCB, zustandSelector);
+                addListener(idCb, idInput);
 
             };
 
@@ -44,7 +88,7 @@ block content
         input#artikelArtSelector-geraet-checkbox.form-control(type='checkbox' name='artikelArtCB')
         label(for='artikelArtSelector-geraet') ARTIKEL ART:
             select#artikelArtSelector-geraet(name = 'artikelArt')
-                option unselected
+                option(value="")  unselected
                 each item in table.artikelArt
                     option=item
         br
@@ -57,17 +101,17 @@ block content
         input#zustandSelector-checkbox.form-control(type='checkbox' name='zustandCB')
         label(for='zustandSelector') Zustand:
             select#zustandSelector(name = 'zustandName')
-                option unselected
+                option(value="") unselected
                 each item in table.zustandName
                     option=item
         br
 
-        input#geraeteName-checkbox.form-control(type='checkbox' name='geraeteIdCB')
-        label(for='geraeteName') Geraet ID:
-        input#geraeteName.form-control(type='text' placeholder='Geraet ID' name='geraet_ID' )
+        input#geraeteId-checkbox.form-control(type='checkbox' name='geraeteIdCB')
+        label(for='geraeteId') Geraet ID:
+        input#geraeteId.form-control(type='text' placeholder='Geraet ID' name='geraetID' )
         br
 
-        input#lager-checkbox.form-control(type='checkbox' name='geraeteIdCB')
+        input#lager-checkbox.form-control(type='checkbox' name='lagerCB')
         label(for='lager') Vorhanden auf der Lager:
         input#lager.form-control(type='checkbox' placeholder="Vorhandensein" name='isAufLager')
         br
