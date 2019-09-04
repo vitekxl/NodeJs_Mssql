@@ -65,7 +65,7 @@ router.post('/r', async (req, res) => {
   table.geraetID    = await db.getColumn("GERAET", 'GERAET_ID' );
   table.colName     = await Object.keys(db.tables[tablename]);
   table.zustandName = await db.getColumn("ZUSTAND", 'ZUSTAND_NAME' );
-  table.tart        = await db.getColumn("TRANSAKTIONSART", 'T_NAME' );
+  table.tart        = await db.getColumn("TRANSAKTIONSART", 'T_ART_NAME' );
 
   console.log(table.artikel_join);
 
@@ -108,7 +108,7 @@ router.post('/r', async (req, res) => {
               "       MA_2,\n" +
               "       CONCAT( ISNULL(M2.MA_VORNAME, NULL), ISNULL(M2.MA_NACHNAME, NULL)) as M2_name,\n" +
               "       TRANSAKTION.GERAET_ID,\n" +
-              "       T.T_NAME as TRANSAKTION_NAME,\n" +
+              "       T.T_ART_NAME as TRANSAKTION_NAME,\n" +
               "       IST_AKTUEL, BESCHREIBUNG,\n" +
               "       DATUM\n" +
               "\n" +
@@ -154,7 +154,7 @@ router.post('/confirmation', async (req, res) => {
       case 'TEST_TABLE'     :   await db.insertRequest(table, ['TEXT'], [`'${req.body.text.trim()}'`]); break;
       case 'ARTIKEL_ART'    :   await db.insertRequest(table, ['ARTIKEL_ART_NAME'], [`'${req.body.artikelArt.trim()}'`]); break;
       case 'ZUSTAND'        :   await db.insertRequest(table, ['ZUSTAND_NAME'], [`'${req.body.zustandName.trim()}'`]); break;
-      case 'TRANSAKTIONSART':   await db.insertRequest(table, ['T_NAME'], [`'${req.body.transart.trim()}'`]); break;
+      case 'TRANSAKTIONSART':   await db.insertRequest(table, ['T_ART_NAME'], [`'${req.body.transart.trim()}'`]); break;
       case 'FIRMA'          :   await db.insertRequest(table, ['FIRMA_NAME'], [`'${req.body.firmaName.trim()}'`]); break;
       case 'ARTIKEL'        :
           console.log('hi')
@@ -195,7 +195,7 @@ router.post('/confirmation', async (req, res) => {
           let description = req.body.descr.trim();
           let isActual    = req.body.isActual ? 1 : 0;
 
-          let tartId = await db.selectRequest(`SELECT T_ART_ID FROM TRANSAKTIONSART WHERE T_NAME='${req.body.tart}';`);
+          let tartId = await db.selectRequest(`SELECT T_ART_ID FROM TRANSAKTIONSART WHERE T_ART_NAME='${req.body.tart}';`);
           tartId = tartId.pop()['T_ART_ID'];
 
           ma1name = ma1name.split(" ");
@@ -276,6 +276,38 @@ router.post('/sql', async (req, res) => {
 
   res.render('runSql', {answer: message})
 });
+
+router.get('/searchT', async (req, res) =>{
+
+
+    let table = {
+
+        geraetID : await db.getColumn("GERAET", 'GERAET_ID' ),
+        tart     : await db.getColumn("TRANSAKTIONSART", 'T_ART_NAME' ),
+        artikelArt  : await db.getColumn("ARTIKEL_ART", 'ARTIKEL_ART_NAME' ),
+        artikel_join : await db.selectRequest("Select ARTIKEL_ART_NAME , ARTIKEL_NAME from ARTIKEL_ART join ARTIKEL A on ARTIKEL_ART.ARTIKEL_ART_ID = A.ARTIKEL_ART_ID"),
+        geraet_join : await db.selectRequest("Select ARTIKEL_NAME, GERAET_ID from ARTIKEl join GERAET G on ARTIKEL.ARTIKEL_ID = G.ARTIKEL_ID"),
+
+    };
+
+    table.artikel_join = JSON.stringify(table.artikel_join);
+    table.geraet_join = JSON.stringify(table.geraet_join);
+
+
+    let ma = await db.getColumns("MITARBEITER", ['MA_VORNAME', 'MA_NACHNAME']);
+    ma = await db.transpose(ma);
+    table.ma = [];
+    for (const value of ma.values) {
+        table.ma.push(value[0] + " " + value[1])
+    }
+
+    res.render('searchT', {
+        table: table,
+        head: db.tables['TRANSAKTION'].keys,
+        values: [],
+        href: 'stylesheets/table.css'
+    })
+})
 
 router.get('/searchG', async (req, res) => {
 
@@ -370,9 +402,6 @@ router.post('/searchG', async (req, res) => {
 
 });
 
-
-
-
 router.get('/search', function (req, res) {
   res.render('search', {elements: ['Geraet', 'Transaktion', 'Mitarbeiter']})
 });
@@ -412,11 +441,8 @@ router.post('/searchMA', async (req, res) => {
             where = `K_NUMMER='${MA.id}'`
         } else {
             if(MA.firmaCB) {
-                let firmaid = await db.selectRequest(`select FIRMA_ID from FIRMA where FIRMA_NAME='${MA.firma}'`);
-                firmaid = firmaid.pop()['FIRMA_ID'];
-                where += `F.FIRMA_ID = ${firmaid}`;
+                where += `F.FIRMA_NAME = '${MA.firma}'`;
             }
-
             if (MA.vnameCB && MA.nnameCB ) {
                 if(where !== "") where += " AND ";
                 where += `MA_VORNAME LIKE '%${MA.vname}%' AND MA_NACHNAME LIKE '%${MA.nname}%'`
@@ -445,14 +471,12 @@ router.post('/searchMA', async (req, res) => {
 });
 
 
-
-
 router.post('/search' , async (req, res) => {
   var search = req.body.search.toLowerCase();
     switch (search) {
          case 'mitarbeiter':    redirect(res, 'searchMA'); break;
          case 'geraet':          redirect(res, 'searchG' ); break;
-        case 'transaktion':     redirect(res, 'searchT' ); break;
+         case 'transaktion':     redirect(res, 'searchT' ); break;
     }
 });
 

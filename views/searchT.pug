@@ -1,0 +1,241 @@
+extends layout
+
+block script
+        script.
+            window.onload = function () {
+
+                let transArtSelector = document.getElementById('T-art');
+                let ma1Selector = document.getElementById('MA1')
+                let ma1VNameInput = document.getElementById('MA1-VName')
+                let ma1NNameInput = document.getElementById('MA1-NName')
+                let ma2Selector = document.getElementById('MA2')
+                let ma2VNameInput = document.getElementById('MA2-VName')
+                let ma2NNameInput = document.getElementById('MA2-NName')
+
+
+                let artikelArtSelector =  document.getElementById("artikelArtSelector-trans");
+                let artikelSelector = document.getElementById("artikelSelector-trans");
+                let geraeteSelector = document.getElementById('gerateSelector')
+                let geraeteInput = document.getElementById('idInput')
+                let isActual = document.getElementById('actual');
+
+
+                let transArtCB = document.getElementById('T-art-checkbox');
+                let ma1CB = document.getElementById('MA1-checkbox')
+                let ma2CB = document.getElementById('MA2-checkbox')
+                let allMaCB = document.getElementById('MA-all-checkbox');
+                let artikelArtCB = document.getElementById("artikelArtSelector-trans-checkbox");
+                let artikelCB = document.getElementById("artikelSelector-trans-checkbox");
+                let geraeteSelectorCB= document.getElementById('gerateSelector-checkbox')
+                let geraeteInputCB = document.getElementById('idInput-checkbox')
+                let isActualCB = document.getElementById('actual-checkbox');
+
+
+                let artikelArr = JSON.parse(`!{table.artikel_join}`);
+                let geraetArr =  JSON.parse(`!{table.geraet_join}`);
+
+                console.log(artikelArr);
+
+                let createAASelect = function (artikelSelector, value) {
+                    while (artikelSelector.options.length !== 0) {
+                        artikelSelector.options.remove(0);
+                    }
+                    while (geraeteSelector.options.length !== 0) {
+                        geraeteSelector.options.remove(0);
+                    }
+
+                    artikelSelector.options[artikelSelector.options.length] = new Option("unselected", '')
+                    geraeteSelector.options[geraeteSelector.options.length] = new Option("unselected", '')
+
+                    for (const set of artikelArr) {
+                        if (set['ARTIKEL_ART_NAME'] === value) {
+                            artikelSelector.options[artikelSelector.options.length] = new Option(set['ARTIKEL_NAME'], set['ARTIKEL_NAME'])
+                        }
+                    }
+                }
+
+                let createGeraeteSelect = function(geraeteSelector, artikel){
+                    while (geraeteSelector.options.length !== 0) {
+                        geraeteSelector.options.remove(0);
+                    }
+
+                    geraeteSelector.options[geraeteSelector.options.length] = new Option("unselected", '')
+                    for (const set of geraetArr) {
+                        if (set['ARTIKEL_NAME'] === artikel) {
+                            geraeteSelector.options[geraeteSelector.options.length] = new Option(set['GERAET_ID'], set['GERAET_ID'])
+                        }
+                    }
+                }
+
+                let addListener = function (CB, func){
+                    func();
+                    CB.addEventListener('change', function () {
+                        func();
+                    })
+                }
+
+                let disableSimpleField = function (CB, Input) {
+                    if (CB.checked) {
+                        Input.setAttribute("required", "")
+                        Input.attributes.required = true;
+                        Input.disabled = false;
+                    } else {
+                        Input.removeAttribute("required")
+                        Input.attributes.required = false;
+                        Input.disabled = true;
+                    }
+                };
+                let disableMAField = function(maCB, maSelector, maVNameInput, maNNameInput ){
+
+                    maSelector.disabled = !maCB.checked;
+                    console.log("hi")
+
+                    if(maCB.checked) {
+                        maVNameInput.disabled = maSelector.value !== ''
+                        maNNameInput.disabled = maSelector.value !== ''
+                    }else {
+                        maVNameInput.disabled = true;
+                        maNNameInput.disabled = true;
+                    }
+                }
+                let setCB = function (CB, checked){
+                    CB.checked = checked;
+                    CB.dispatchEvent(new Event('change'));
+
+                }
+
+                addListener(transArtCB, function () { disableSimpleField(transArtCB,      transArtSelector)})
+                addListener(artikelArtCB, function () { disableSimpleField(artikelArtCB,    artikelArtSelector)})
+                addListener(artikelCB, function () { disableSimpleField(artikelCB,       artikelSelector )})
+                addListener(geraeteSelectorCB, function () { disableSimpleField(geraeteSelectorCB, geraeteSelector )})
+                addListener(geraeteInputCB, function () { disableSimpleField(geraeteInputCB,      geraeteInput )})
+                addListener(isActualCB, function () { disableSimpleField(isActualCB, isActual )})
+                addListener(ma1CB, function () { disableMAField(ma1CB, ma1Selector, ma1VNameInput, ma1NNameInput )})
+                addListener(ma2CB, function () { disableMAField(ma2CB, ma2Selector, ma2VNameInput, ma2NNameInput )})
+
+
+                createAASelect(artikelSelector, artikelArtSelector.value);
+                createGeraeteSelect(geraeteSelector, artikelSelector.value);
+
+                artikelSelector.addEventListener("change", function () {
+                    createGeraeteSelect(geraeteSelector, artikelSelector.value);
+                })
+
+                artikelArtSelector.addEventListener("change", function () {
+                    createAASelect(artikelSelector, artikelArtSelector.value);
+                    artikelSelector.disabled = artikelArtSelector.value === 'unselected';
+                  //  aCB.disabled = artikelArtSelector.value === 'unselected';
+                });
+
+                allMaCB.addEventListener('change' , function() {
+                   // ma2Selector.disabled = allMaCB.checked;
+                    if(allMaCB.checked) {
+                        ma2CB.checked = !allMaCB.checked;
+                        ma2CB.dispatchEvent(new Event('change'));
+                    }
+                })
+
+                geraeteInputCB.addEventListener('change', function () {
+                    artikelCB.disabled          = geraeteInputCB.checked;
+                    artikelArtCB.disabled       = geraeteInputCB.checked;
+                    geraeteSelectorCB.disabled  = geraeteInputCB.checked;
+
+                })
+
+
+
+                ma1Selector.addEventListener("change", function () {
+                    ma1VNameInput.disabled = ma1Selector.value !== ''
+                    ma1NNameInput.disabled = ma1Selector.value !== ''
+                })
+                ma2Selector.addEventListener("change", function () {
+                    ma2VNameInput.disabled = ma2Selector.value !== ''
+                    ma2NNameInput.disabled = ma2Selector.value !== ''
+                })
+
+
+
+            };
+
+block content
+    form(method='POST' action='/searchT')
+
+        input#T-art-checkbox.form-control(type='checkbox' name='tart')
+        label(for='T-art') Transaktionsart:
+        select#T-art(name = 'tart')
+            option(value="") unselected
+            each item in table.tart
+                option=item
+        br
+
+        input#MA1-checkbox.form-control(type='checkbox' name='ma1nameCB')
+        label(for='MA1') MA1:
+        select#MA1(name = 'ma1name')
+            option(value="") unselected
+            each item in table.ma
+                option=item
+
+        input#MA1-VName.form-control(type='text' placeholder='Vorname' name='ma1Vname'  required)
+        input#MA1-NName.form-control(type='text' placeholder='Nachname' name='ma1Nname' required)
+        br
+
+        input#MA2-checkbox.form-control(type='checkbox' name='ma2nameCB')
+        label(for='MA2') MA2:
+
+        select#MA2(name = 'ma2name')
+            option(value="") unselected
+            option(value='null') [NULL]
+            each item in table.ma
+                option=item
+
+        input#MA2-VName.form-control(type='text' placeholder='Vorname' name='ma2Vname'  required)
+        input#MA2-NName.form-control(type='text' placeholder='Nachname' name='ma2Nname' required)
+        br
+
+        label(for='MA-all-checkbox') Search in MA1 and MA2:
+            input#MA-all-checkbox.form-control(type='checkbox' name='MaAllCB')
+            br
+
+        input#artikelArtSelector-trans-checkbox.form-control(type='checkbox' name='artikelArtSelectorCB')
+        label(for='artikelArtSelector-trans') ARTIKEL ART:
+        select#artikelArtSelector-trans(name = 'artikelArt')
+            option(value="") unselected
+            each item in table.artikelArt
+                option=item
+        br
+
+        input#artikelSelector-trans-checkbox.form-control(type='checkbox' name='artikelSelectorCB')
+        label(for='artikelSelector-trans') ARTIKEL:
+        select#artikelSelector-trans(name = 'artikelName')
+        br
+
+        input#gerateSelector-checkbox.form-control(type='checkbox' name='gerateSelectorCB')
+        label(for='gerateSelector') GERAET:
+        select#gerateSelector(name = 'gerateName')
+            each item in table.geraetID
+                option=item
+        br
+
+        input#idInput-checkbox.form-control(type='checkbox' name='idInputCB')
+        label(for='idInput') GERAET ID:
+        input#idInput(name = 'idInput', type='text')
+        br
+
+        input#actual-checkbox.form-control(type='checkbox' name='isActualCB')
+        label(for='actual') Ist Aktuel:
+        input#actual.form-control(type='checkbox' name='isActual')
+        br
+
+        button.btn.btn-primary(type='submit') Search
+
+        div.main-table
+            table
+                tr
+                each th_text in head
+                    th=th_text
+
+                -var length = typeof values === 'undefined' ? 0 : values.length;
+                -for(let i = 0; i<length; i++)
+                    tr
+                    each td_text in values[i]
+                        td=td_text

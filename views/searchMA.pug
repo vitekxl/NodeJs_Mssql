@@ -13,6 +13,11 @@ block script
             var nnameInput = document.getElementById('MA-NName');
             var maInput    = document.getElementById('MA-ID');
 
+            firmaInput.disabled = !firmaCB.checked;
+            maInput.disabled    = !maCB.checked;
+            vnameInput.disabled = !vnameCB.checked;
+            nnameInput.disabled = !nnameCB.checked;
+
 
             let event = function () {
                 if (maCB.checked) {
@@ -27,9 +32,9 @@ block script
                     firmaCB.disabled = false;
                     vnameCB.disabled = false;
                     nnameCB.disabled = false;
-                    firmaInput.disabled = false;
-                    vnameInput.disabled = false;
-                    nnameInput.disabled = false;
+                    firmaInput.disabled = !firmaCB.checked;
+                    vnameInput.disabled = !vnameCB.checked;
+                    nnameInput.disabled = !nnameCB.checked;
                 }
             }
 
@@ -38,14 +43,16 @@ block script
                     if (CB.checked) {
                         Input.setAttribute("required", "")
                         Input.attributes.required = true;
+                        Input.disabled = false;
                     } else {
                         Input.removeAttribute("required")
                         Input.attributes.required = false;
+                        Input.disabled = true;
                     }
                 })
             }
 
-            event()
+           // event()
 
             maCB.addEventListener('change', function () {
                 event()

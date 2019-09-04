@@ -8,6 +8,7 @@ block script
                 let artikelSelector = document.getElementById("artikelSelector-geraet");
                 let zustandSelector = document.getElementById("zustandSelector");
                 let idInput =          document.getElementById("geraeteId");
+                let lagerInput = document.getElementById('lager')
 
                 let artikelArr = JSON.parse(`!{table.artikel_join}`);
 
@@ -16,7 +17,7 @@ block script
                 let aaCB = document.getElementById('artikelArtSelector-geraet-checkbox');
                 let aCB = document.getElementById('artikelSelector-geraet-checkbox');
                 let zCB = document.getElementById('zustandSelector-checkbox');
-                let idCb = document.getElementById('geraeteId-checkbox');
+                let idCB = document.getElementById('geraeteId-checkbox');
                 let lCB = document.getElementById('lager-checkbox');
 
                 let createAASelect = function (artikelSelector, value) {
@@ -32,25 +33,32 @@ block script
                     }
                 }
 
-                let disableAllExceptId = function(isDisable){
 
-                        aaCB.disabled = isDisable;
-                        aCB.disabled = isDisable;
-                        zCB.disabled = isDisable;
-                        lCB.disabled = isDisable;
-                }
+
+                artikelArtSelector.disabled = !idCB.checked;
+                zustandSelector.disabled = !zCB.checked;
+                idInput.disabled = !idCB.checked;
+                lagerInput.disabled  = !lCB.checked;
+
+
 
                 let addListener = function (CB, Input) {
                     CB.addEventListener('change', function () {
                         if (CB.checked) {
                             Input.setAttribute("required", "")
                             Input.attributes.required = true;
+                            Input.disabled = false;
                         } else {
                             Input.removeAttribute("required")
                             Input.attributes.required = false;
+                            Input.disabled = true;
                         }
                     })
                 }
+
+                lCB.addEventListener('change', function () {
+                        lagerInput.disabled = !lCB.checked;
+                })
 
                 aCB.addEventListener('change', function () {
                     if(aCB.checked) {
@@ -63,22 +71,27 @@ block script
                     }
                 })
 
-                idCb.addEventListener("change", function () {
-                    disableAllExceptId(idCb.checked);
+                idCB.addEventListener("change", function () {
+
+                    aaCB.disabled = idCB.checked;
+                    aCB.disabled = idCB.checked;
+                    zCB.disabled = idCB.checked;
+                    lCB.disabled = idCB.checked;
+
                 })
 
                 createAASelect(artikelSelector, artikelArtSelector.value);
 
                 artikelArtSelector.addEventListener("change", function () {
                     createAASelect(artikelSelector, artikelArtSelector.value);
-                    artikelSelector.disabled = artikelArtSelector.value === 'unselected';
+                    aCB.checked = false;
                     aCB.disabled = artikelArtSelector.value === 'unselected';
                 });
 
                 addListener(aaCB, artikelArtSelector);
                 addListener(aCB, artikelSelector);
                 addListener(zCB, zustandSelector);
-                addListener(idCb, idInput);
+                addListener(idCB, idInput);
 
             };
 
