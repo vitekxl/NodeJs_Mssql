@@ -11,6 +11,8 @@ block script
             var firmaInput = document.getElementById('Firma-name');
             var vnameInput = document.getElementById('MA-VName');
             var nnameInput = document.getElementById('MA-NName');
+            var maInput    = document.getElementById('MA-ID');
+
 
             let event = function () {
                 if (maCB.checked) {
@@ -31,14 +33,32 @@ block script
                 }
             }
 
+            let addListener = function(CB, Input){
+                CB.addEventListener('change', function () {
+                    if (CB.checked) {
+                        Input.setAttribute("required", "")
+                        Input.attributes.required = true;
+                    } else {
+                        Input.removeAttribute("required")
+                        Input.attributes.required = false;
+                    }
+                })
+            }
+
             event()
-
-
-
 
             maCB.addEventListener('change', function () {
                 event()
             })
+
+
+
+            addListener(vnameCB, vnameInput);
+            addListener(nnameCB, nnameInput)
+            addListener(maCB, maInput);
+            addListener(firmaCB, firmaInput);
+
+
 
         }
 
@@ -46,10 +66,10 @@ block script
 block content
     form(method='POST' action='/searchMA')
 
-        input#Firma-name-checkbox.form-control(type='checkbox' name='firmaCB')
+        input#Firma-name-checkbox.form-control(type='checkbox' name='firmaCB' )
         label(for='Firma-name') FIRMA NAME:
-                select#Firma-name(name = 'firmaName')
-                    option unselected
+                select#Firma-name(name = 'firmaName' )
+                    option(value="") unselected
                     each item in table.firma
                         option=item
         br

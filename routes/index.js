@@ -14,7 +14,7 @@ var redirect = function (res, path) {
 
 var config = {
   user: 'sa',
-  password: 'SQLSyskron2019!',
+  password: 'Prizma1994!',
   server: 'localhost',
   database: 'TestDB'
 };
@@ -336,7 +336,7 @@ router.post('/searchMA', async (req, res) => {
     table.firma = await db.getColumn("FIRMA", "FIRMA_NAME");
     table.values = [];
     let MA = {
-        firma:  req.body.firmaName === 'unselected' ? undefined : req.body.firmaName,
+        firma:  req.body.firmaName === '' ? undefined : req.body.firmaName,
         id:     req.body.maID === '' ? undefined : req.body.maID,
         vname:  req.body.maVname === '' ? undefined : req.body.maVname,
         nname:  req.body.maNname === '' ? undefined : req.body.maNname,
@@ -346,30 +346,30 @@ router.post('/searchMA', async (req, res) => {
         maCB:    typeof req.body.maCB       !== "undefined",
     };
 
-    let beginSearch = false;
-    for (const key of Object.keys(MA)) {
-        if (typeof MA[key] !== 'undefined') {
-            beginSearch = true;
-            break;
-        }
-    }
+    console.log(MA);
+
+    let beginSearch = MA.firmaCB || MA.vnameCB || MA.nnameCB || MA.maCB ;
 
     if (beginSearch) {
         let where = "";
-        if (typeof MA.id !== 'undefined') {
+        if (MA.maCB) {
             where = `K_NUMMER='${MA.id}'`
-        } else if (typeof MA.firma !== 'undefined') {
-            let firmaid = await db.selectRequest(`select FIRMA_ID from FIRMA where FIRMA_NAME='${MA.firma}'`);
-            console.log(firmaid);
-            firmaid = firmaid.pop()['FIRMA_ID'];
-            where = `F.FIRMA_ID = ${firmaid}`;
         } else {
-            if (typeof MA.vname !== 'undefined' && typeof MA.nname !== 'undefined') {
-                where = `MA_VORNAME LIKE '%${MA.vname}%' AND MA_NACHNAME LIKE '%${MA.nname}%'`
-            } else if (typeof MA.vname !== 'undefined') {
-                where = `MA_VORNAME LIKE '%${MA.vname}%'`
-            } else {
-                where = `MA_NACHNAME LIKE '%${MA.nname}%'`
+            if(MA.firmaCB) {
+                let firmaid = await db.selectRequest(`select FIRMA_ID from FIRMA where FIRMA_NAME='${MA.firma}'`);
+                firmaid = firmaid.pop()['FIRMA_ID'];
+                where += `F.FIRMA_ID = ${firmaid}`;
+            }
+
+            if (MA.vnameCB && MA.nnameCB ) {
+                if(where !== "") where += " AND ";
+                where += `MA_VORNAME LIKE '%${MA.vname}%' AND MA_NACHNAME LIKE '%${MA.nname}%'`
+            } else if (MA.vnameCB) {
+                if(where !== "") where += " AND ";
+                where += `MA_VORNAME LIKE '%${MA.vname}%'`
+            } else if(MA.nnameCB) {
+                if(where !== "") where += " AND ";
+                where += `MA_NACHNAME LIKE '%${MA.nname}%'`
             }
         }
         let sql = `Select K_NUMMER, MA_VORNAME, MA_NACHNAME, FIRMA_NAME From MITARBEITER join FIRMA F on MITARBEITER.FIRMA_ID = F.FIRMA_ID where ${where} ;`;

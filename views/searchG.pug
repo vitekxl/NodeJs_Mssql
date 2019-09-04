@@ -14,7 +14,8 @@ block script
                     while (artikelSelector.options.length !== 0) {
                         artikelSelector.options.remove(0);
                     }
-                    let cnt = 1;
+
+                    artikelSelector.options[artikelSelector.options.length] = new Option("unselected", '')
                     for (const set of artikelArr) {
                         if (set['ARTIKEL_ART_NAME'] === value) {
                             artikelSelector.options[artikelSelector.options.length] = new Option(set['ARTIKEL_NAME'], set['ARTIKEL_NAME'])
@@ -40,28 +41,37 @@ block script
 block content
     form(method='POST' action='/searchG')
 
+        input#artikelArtSelector-geraet-checkbox.form-control(type='checkbox' name='artikelArtCB')
         label(for='artikelArtSelector-geraet') ARTIKEL ART:
             select#artikelArtSelector-geraet(name = 'artikelArt')
                 option unselected
                 each item in table.artikelArt
                     option=item
-            br
+        br
 
+        input#artikelSelector-geraet-checkbox.form-control(type='checkbox' name='artikelCB')
         label(for='artikelSelector-geraet') ARTIKEL:
             select#artikelSelector-geraet(name = 'artikelName')
-            br
-        label(for='ZustandSelector') Zustand:
-            select#ZustandSelector(name = 'zustandName')
+        br
+
+        input#zustandSelector-checkbox.form-control(type='checkbox' name='zustandCB')
+        label(for='zustandSelector') Zustand:
+            select#zustandSelector(name = 'zustandName')
                 option unselected
                 each item in table.zustandName
                     option=item
-            br
-        label(for='Z-Name') Geraet ID:
-        input#Z-name.form-control(type='text' placeholder='Geraet ID' name='geraet_ID' )
         br
-        label(for='Anzahl') Vorhanden auf der Lager:
-        input#Anzahl.form-control(type='checkbox' placeholder="Vorhandensein" name='isAufLager')
+
+        input#geraeteName-checkbox.form-control(type='checkbox' name='geraeteIdCB')
+        label(for='geraeteName') Geraet ID:
+        input#geraeteName.form-control(type='text' placeholder='Geraet ID' name='geraet_ID' )
         br
+
+        input#lager-checkbox.form-control(type='checkbox' name='geraeteIdCB')
+        label(for='lager') Vorhanden auf der Lager:
+        input#lager.form-control(type='checkbox' placeholder="Vorhandensein" name='isAufLager')
+        br
+
         button.btn.btn-primary(type='submit') Search
 
         div.main-table
