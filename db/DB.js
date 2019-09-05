@@ -88,7 +88,7 @@ class DB{
          this.selectRequest =   async (slqRequest) => {
              var res= undefined;
              await this.RetrieveFromDb(slqRequest).then(function (result) {
-                 if(result.rowsAffected.pop() === 0) res = undefined;
+                 if(result.rowsAffected.pop() === 0) res = [];
                  else res = result.recordset;
              });
              return res;
@@ -100,7 +100,7 @@ class DB{
          }
 
          this.transpose = async (rows) => {
-             if(rows.length === 0 )return undefined;
+             if(rows.length === 0 ) return undefined;
             // let table = _this.tables[tableName];
              let res = { keys:Object.keys(rows[0]), values: [] };
 

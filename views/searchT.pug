@@ -18,17 +18,17 @@ block script
                 let geraeteSelector = document.getElementById('gerateSelector')
                 let geraeteInput = document.getElementById('idInput')
                 let isActual = document.getElementById('actual');
+                let idTrans = document.getElementById('idTrans');
 
 
                 let transArtCB = document.getElementById('T-art-checkbox');
                 let ma1CB = document.getElementById('MA1-checkbox')
                 let ma2CB = document.getElementById('MA2-checkbox')
                 let allMaCB = document.getElementById('MA-all-checkbox');
-                let artikelArtCB = document.getElementById("artikelArtSelector-trans-checkbox");
-                let artikelCB = document.getElementById("artikelSelector-trans-checkbox");
                 let geraeteSelectorCB= document.getElementById('gerateSelector-checkbox')
                 let geraeteInputCB = document.getElementById('idInput-checkbox')
                 let isActualCB = document.getElementById('actual-checkbox');
+                let idTransCB = document.getElementById('idTrans-checkbox');
 
 
                 let artikelArr = JSON.parse(`!{table.artikel_join}`);
@@ -88,7 +88,6 @@ block script
                 let disableMAField = function(maCB, maSelector, maVNameInput, maNNameInput ){
 
                     maSelector.disabled = !maCB.checked;
-                    console.log("hi")
 
                     if(maCB.checked) {
                         maVNameInput.disabled = maSelector.value !== ''
@@ -105,14 +104,31 @@ block script
                 }
 
                 addListener(transArtCB, function () { disableSimpleField(transArtCB,      transArtSelector)})
-                addListener(artikelArtCB, function () { disableSimpleField(artikelArtCB,    artikelArtSelector)})
-                addListener(artikelCB, function () { disableSimpleField(artikelCB,       artikelSelector )})
+                addListener(geraeteSelectorCB, function () { disableSimpleField(geraeteSelectorCB,    artikelArtSelector)})
+                addListener(geraeteSelectorCB, function () { disableSimpleField(geraeteSelectorCB,       artikelSelector )})
                 addListener(geraeteSelectorCB, function () { disableSimpleField(geraeteSelectorCB, geraeteSelector )})
-                addListener(geraeteInputCB, function () { disableSimpleField(geraeteInputCB,      geraeteInput )})
-                addListener(isActualCB, function () { disableSimpleField(isActualCB, isActual )})
+                addListener(isActualCB, function () { isActual.disabled = !isActualCB.checked})
                 addListener(ma1CB, function () { disableMAField(ma1CB, ma1Selector, ma1VNameInput, ma1NNameInput )})
                 addListener(ma2CB, function () { disableMAField(ma2CB, ma2Selector, ma2VNameInput, ma2NNameInput )})
+                addListener(geraeteInputCB, function () {
+                    disableSimpleField(geraeteInputCB,      geraeteInput )
+                    if(geraeteInputCB.checked) {
+                        geraeteSelectorCB.checked = false;
+                        geraeteSelectorCB.dispatchEvent(new Event('change'));
+                    }
+                    geraeteSelectorCB.disabled = geraeteInputCB.checked;
 
+                })
+                addListener(idTransCB, function () {
+                    disableSimpleField(idTransCB, idTrans)
+                    let arr = [transArtCB, ma1CB, ma2CB, allMaCB, geraeteInputCB, isActualCB, geraeteSelectorCB,]
+                    arr.forEach(function (x) {
+                        if(idTransCB.checked) x.checked = false;
+                        x.dispatchEvent(new Event('change'));
+                        x.disabled = idTransCB.checked;
+
+                    })
+                })
 
                 createAASelect(artikelSelector, artikelArtSelector.value);
                 createGeraeteSelect(geraeteSelector, artikelSelector.value);
@@ -132,15 +148,10 @@ block script
                     if(allMaCB.checked) {
                         ma2CB.checked = !allMaCB.checked;
                         ma2CB.dispatchEvent(new Event('change'));
+
                     }
                 })
 
-                geraeteInputCB.addEventListener('change', function () {
-                    artikelCB.disabled          = geraeteInputCB.checked;
-                    artikelArtCB.disabled       = geraeteInputCB.checked;
-                    geraeteSelectorCB.disabled  = geraeteInputCB.checked;
-
-                })
 
 
 
@@ -160,7 +171,12 @@ block script
 block content
     form(method='POST' action='/searchT')
 
-        input#T-art-checkbox.form-control(type='checkbox' name='tart')
+        input#idTrans-checkbox.form-control(type='checkbox' name='idTransCB')
+        label(for='idTrans') Transaktion ID:
+        input#idTrans(name = 'idTrans', type='text')
+        br
+
+        input#T-art-checkbox.form-control(type='checkbox' name='tartCB')
         label(for='T-art') Transaktionsart:
         select#T-art(name = 'tart')
             option(value="") unselected
@@ -175,8 +191,8 @@ block content
             each item in table.ma
                 option=item
 
-        input#MA1-VName.form-control(type='text' placeholder='Vorname' name='ma1Vname'  required)
-        input#MA1-NName.form-control(type='text' placeholder='Nachname' name='ma1Nname' required)
+        input#MA1-VName.form-control(type='text' placeholder='Vorname' name='ma1Vname'  )
+        input#MA1-NName.form-control(type='text' placeholder='Nachname' name='ma1Nname')
         br
 
         input#MA2-checkbox.form-control(type='checkbox' name='ma2nameCB')
@@ -188,15 +204,14 @@ block content
             each item in table.ma
                 option=item
 
-        input#MA2-VName.form-control(type='text' placeholder='Vorname' name='ma2Vname'  required)
-        input#MA2-NName.form-control(type='text' placeholder='Nachname' name='ma2Nname' required)
+        input#MA2-VName.form-control(type='text' placeholder='Vorname' name='ma2Vname'  )
+        input#MA2-NName.form-control(type='text' placeholder='Nachname' name='ma2Nname' )
         br
 
         label(for='MA-all-checkbox') Search in MA1 and MA2:
             input#MA-all-checkbox.form-control(type='checkbox' name='MaAllCB')
             br
 
-        input#artikelArtSelector-trans-checkbox.form-control(type='checkbox' name='artikelArtSelectorCB')
         label(for='artikelArtSelector-trans') ARTIKEL ART:
         select#artikelArtSelector-trans(name = 'artikelArt')
             option(value="") unselected
@@ -204,14 +219,13 @@ block content
                 option=item
         br
 
-        input#artikelSelector-trans-checkbox.form-control(type='checkbox' name='artikelSelectorCB')
         label(for='artikelSelector-trans') ARTIKEL:
         select#artikelSelector-trans(name = 'artikelName')
         br
 
-        input#gerateSelector-checkbox.form-control(type='checkbox' name='gerateSelectorCB')
+        input#gerateSelector-checkbox.form-control(type='checkbox' name='geraeteSelectorCB')
         label(for='gerateSelector') GERAET:
-        select#gerateSelector(name = 'gerateName')
+        select#gerateSelector(name = 'geraeteName')
             each item in table.geraetID
                 option=item
         br
