@@ -47,7 +47,7 @@ block content
                 h1.display-4.m-b-2=tablename
 
                 // register form
-                form(method='POST' action='/confirmation')
+                form(method='POST' action='/add')
                     div.form-group
                         input#info.form-control(type = 'hidden', name='tableName', value=tablename )
                         if tablename === 'ZUSTAND'
@@ -154,12 +154,14 @@ block content
                             p error input tablename
                     button.btn.btn-primary(type='submit') Add
 
-                div.main-table
-                    table
-                        tr
-                        each th_text in keys
-                            th=th_text
-                        -for(var i = 0; i<values.length; i++)
+                    div.main-table
+                        table
                             tr
-                            each td_text in values[i]
-                                td=td_text
+                            each th_text in keys
+                                th=th_text
+
+                            -var length = typeof values === 'undefined' ? 0 : values.length;
+                            -for(let i = 0; i<length; i++)
+                                tr
+                                each td_text in values[i]
+                                    td=td_text

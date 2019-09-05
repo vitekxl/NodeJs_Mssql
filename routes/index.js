@@ -41,190 +41,192 @@ router.get('/', async (req, res) => {
 });
 
 
-router.get('/r', async  (req, res, next) => {
+router.get('/r', async  (req, res) => {
   res.render('makeRequest', { list: Object.keys(db.tables)});
 });
-
-
-
-router.post('/r', async (req, res) => {
-
-
-  var tablename = req.body['tableName'];
-
-  //console.log(db);
-  let table = {};
-  table.values      = await db.getTable(req.body['tableName']);
-
-
-
-  table.artikelArt  = await db.getColumn("ARTIKEL_ART", 'ARTIKEL_ART_NAME' );
-  table.artikel     = await db.getColumn("ARTIKEL", 'ARTIKEL_NAME' );
-  table.artikel_join = await db.selectRequest("Select ARTIKEL_ART_NAME , ARTIKEL_NAME from ARTIKEL_ART join ARTIKEL A on ARTIKEL_ART.ARTIKEL_ART_ID = A.ARTIKEL_ART_ID");
-  table.firma       = await db.getColumn("FIRMA", 'FIRMA_NAME' );
-  table.geraetID    = await db.getColumn("GERAET", 'GERAET_ID' );
-  table.colName     = await Object.keys(db.tables[tablename]);
-  table.zustandName = await db.getColumn("ZUSTAND", 'ZUSTAND_NAME' );
-  table.tart        = await db.getColumn("TRANSAKTIONSART", 'T_ART_NAME' );
-
-  console.log(table.artikel_join);
-
-  table.artikel_join = JSON.stringify(table.artikel_join);
-
-  switch (tablename) {
-      case 'ARTIKEL':
-          var sqlreq = "SELECT ARTIKEL_ID, ARTIKEL_NAME AS ARTIKEL, ARTIKEL_ART_NAME AS ARTIKEL_ART, ANZAHL_AUF_LAGER  from ARTIKEL Join ARTIKEL_ART AA on ARTIKEL.ARTIKEL_ART_ID = AA.ARTIKEL_ART_ID"
-          var result=  await db.selectRequest(sqlreq);
-          result = await db.transpose(result);
-          table.values = result.values;
-          table.keys = result.keys;
-          break;
-      case 'GERAET':
-          var sqlreq = "Select GERAET_ID, ARTIKEL_NAME AS ARTIKEL, ZUSTAND_NAME as ZUSTAND, IST_AUF_LAGER from GERAET join ARTIKEL A on GERAET.ARTIKEL_ID = A.ARTIKEL_ID join ZUSTAND Z on GERAET.ZUSTAND_ID = Z.ZUSTAND_ID"
-          var result=  await db.selectRequest(sqlreq);
-          result = await db.transpose(result);
-          table.values = result.values;
-          table.keys = result.keys;
-          break;
-      case 'MITARBEITER':
-          var sqlreq = "Select K_NUMMER, MA_VORNAME AS VORNAME, MA_NACHNAME AS NACHNAME, FIRMA_NAME AS FIRMA from MITARBEITER join FIRMA F on MITARBEITER.FIRMA_ID = F.FIRMA_ID";
-          var result=  await db.selectRequest(sqlreq);
-          result = await db.transpose(result);
-          table.values = result.values;
-          table.keys = result.keys;
-          break;
-      case 'TRANSAKTION':
-          let ma = await db.getColumns("MITARBEITER", ['MA_VORNAME', 'MA_NACHNAME']);
-          ma = await db.transpose(ma);
-          table.ma = [];
-          for (const value of ma.values) {
-              table.ma.push(value[0] + " " + value[1])
-          }
-
-          var sqlreq = "SELECT\n" +
-              "       TRANSAKTION_ID,\n" +
-              "       MA_1,\n" +
-              "       CONCAT( M1.MA_VORNAME, M1.MA_NACHNAME) as M1_name,\n" +
-              "       MA_2,\n" +
-              "       CONCAT( ISNULL(M2.MA_VORNAME, NULL), ISNULL(M2.MA_NACHNAME, NULL)) as M2_name,\n" +
-              "       TRANSAKTION.GERAET_ID,\n" +
-              "       T.T_ART_NAME as TRANSAKTION_NAME,\n" +
-              "       IST_AKTUEL, BESCHREIBUNG,\n" +
-              "       DATUM\n" +
-              "\n" +
-              "from TRANSAKTION\n" +
-              "    left join MITARBEITER M2 on TRANSAKTION.MA_2 = M2.K_NUMMER\n" +
-              "    join TRANSAKTIONSART T on TRANSAKTION.TRANSAKTION_ART_ID = T.T_ART_ID\n" +
-              "    join MITARBEITER M1 on TRANSAKTION.MA_1 = M1.K_NUMMER\n" +
-              "    join GERAET G on TRANSAKTION.GERAET_ID = G.GERAET_ID\n".replace(/\n/, '');
-          var result=  await db.selectRequest(sqlreq);
-          result = await db.transpose(result);
-          table.values = result.values;
-          table.keys = result.keys;
-          break;
-      default:
-          let trans = await table.values.transpose();
-          table.values = trans.values;
-          table.keys = trans.keys;
-          break;
-
-  }
-
-  //console.log(db.tables[tablename]);
-
-    res.render('enterValues',
-        {
-          href: 'stylesheets/table.css',
-          title: 'table',
-          tablename: tablename,
-          keys: table.keys,
-          values: table.values,
-          table: table
-        });
+router.post('/r', async  (req, res) => {
+    console.log(req.body);
+    await renderAddR(req, res, [])
 
 });
 
 
-router.post('/confirmation', async (req, res) => {
-  console.dir(req.body);
+var renderAddR = async (req, res) =>{
 
-  let table = req.body.tableName;
 
-  switch (table) {
-      case 'TEST_TABLE'     :   await db.insertRequest(table, ['TEXT'], [`'${req.body.text.trim()}'`]); break;
-      case 'ARTIKEL_ART'    :   await db.insertRequest(table, ['ARTIKEL_ART_NAME'], [`'${req.body.artikelArt.trim()}'`]); break;
-      case 'ZUSTAND'        :   await db.insertRequest(table, ['ZUSTAND_NAME'], [`'${req.body.zustandName.trim()}'`]); break;
-      case 'TRANSAKTIONSART':   await db.insertRequest(table, ['T_ART_NAME'], [`'${req.body.transart.trim()}'`]); break;
-      case 'FIRMA'          :   await db.insertRequest(table, ['FIRMA_NAME'], [`'${req.body.firmaName.trim()}'`]); break;
-      case 'ARTIKEL'        :
-          console.log('hi')
-          let id = await db.selectRequest(`Select ARTIKEL_ART_ID from ARTIKEL_ART WHERE ARTIKEL_ART_NAME='${req.body.artikelArt}';`);
+    let tablename = req.body.tableName;
+    let table = {};
+    table.artikelArt  = await db.getColumn("ARTIKEL_ART", 'ARTIKEL_ART_NAME' );
+    table.artikel     = await db.getColumn("ARTIKEL", 'ARTIKEL_NAME' );
+    table.artikel_join = await db.selectRequest("Select ARTIKEL_ART_NAME , ARTIKEL_NAME from ARTIKEL_ART join ARTIKEL A on ARTIKEL_ART.ARTIKEL_ART_ID = A.ARTIKEL_ART_ID");
+    table.firma       = await db.getColumn("FIRMA", 'FIRMA_NAME' );
+    table.geraetID    = await db.getColumn("GERAET", 'GERAET_ID' );
+    table.colName     = await Object.keys(db.tables[tablename]);
+    table.zustandName = await db.getColumn("ZUSTAND", 'ZUSTAND_NAME' );
+    table.tart        = await db.getColumn("TRANSAKTIONSART", 'T_ART_NAME' );
+
+    table.artikel_join = JSON.stringify(table.artikel_join);
+
+    let needSQLReq = true;
+    let sqlreq = "";
+
+    switch (tablename) {
+        case 'ARTIKEL':
+            sqlreq = "SELECT ARTIKEL_ID, ARTIKEL_NAME AS ARTIKEL, ARTIKEL_ART_NAME AS ARTIKEL_ART, ANZAHL_AUF_LAGER  from ARTIKEL Join ARTIKEL_ART AA on ARTIKEL.ARTIKEL_ART_ID = AA.ARTIKEL_ART_ID"
+            keys = ['ARTIKEL_ID', 'ARTIKEL', 'ARTIKEL_ART', 'ANZAHL_AUF_LAGER'];
+            break;
+        case 'GERAET':
+            sqlreq = "Select GERAET_ID, ARTIKEL_NAME AS ARTIKEL, ZUSTAND_NAME as ZUSTAND, IST_AUF_LAGER from GERAET join ARTIKEL A on GERAET.ARTIKEL_ID = A.ARTIKEL_ID join ZUSTAND Z on GERAET.ZUSTAND_ID = Z.ZUSTAND_ID"
+            keys = ['GERAET_ID', 'ARTIKEL', 'ZUSTAND', 'IST_AUF_LAGER'];
+            break;
+        case 'MITARBEITER':
+            sqlreq = "Select K_NUMMER, MA_VORNAME AS VORNAME, MA_NACHNAME AS NACHNAME, FIRMA_NAME AS FIRMA from MITARBEITER join FIRMA F on MITARBEITER.FIRMA_ID = F.FIRMA_ID";
+            keys = ['K_NUMMER', 'VORNAME', 'NACHNAME', 'FIRMA'];
+            break;
+        case 'TRANSAKTION':
+            let ma = await db.getColumns("MITARBEITER", ['MA_VORNAME', 'MA_NACHNAME']);
+            ma = await db.transpose(ma);
+            table.ma = [];
+            for (const value of ma.values) {
+                table.ma.push(value[0] + " " + value[1])
+            }
+
+            sqlreq = "SELECT\n" +
+                "       TRANSAKTION_ID,\n" +
+                "       MA_1,\n" +
+                "       CONCAT( M1.MA_VORNAME, M1.MA_NACHNAME) as M1_name,\n" +
+                "       MA_2,\n" +
+                "       CONCAT( ISNULL(M2.MA_VORNAME, NULL), ISNULL(M2.MA_NACHNAME, NULL)) as M2_name,\n" +
+                "       TRANSAKTION.GERAET_ID,\n" +
+                "       T.T_ART_NAME as TRANSAKTION_NAME,\n" +
+                "       IST_AKTUEL, BESCHREIBUNG,\n" +
+                "       DATUM\n" +
+                "\n" +
+                "from TRANSAKTION\n" +
+                "    left join MITARBEITER M2 on TRANSAKTION.MA_2 = M2.K_NUMMER\n" +
+                "    join TRANSAKTIONSART T on TRANSAKTION.TRANSAKTION_ART_ID = T.T_ART_ID\n" +
+                "    join MITARBEITER M1 on TRANSAKTION.MA_1 = M1.K_NUMMER\n" +
+                "    join GERAET G on TRANSAKTION.GERAET_ID = G.GERAET_ID\n".replace(/\n/, '');
+
+            keys = ['TRANSAKTION_ID', 'MA_1', 'M1_name', 'MA_2', "M2_name", "GERAET_ID", "TRANSAKTION", "IST_AKTUEL", "BESCHREIBUNG", "DATUM"];
+            break;
+        default:
+            values  = await db.getTable(req.body['tableName']);
+            let trans     = await values.transpose();
+            values  = trans.values;
+            needSQLReq = false;
+            keys = db.tables[tablename].keys;
+            break;
+    }
+    if(needSQLReq) {
+        let result = await db.selectRequest(sqlreq);
+        if (result.length === 0) {
+            values = [];
+        } else {
+            result = await db.transpose(result);
+            values = result.values;
+        }
+    }
+    res.render('enterValues',
+        {
+            href: 'stylesheets/table.css',
+            title: 'add value',
+            tablename: tablename,
+            keys: keys,
+            values: values,
+            table: table
+        });
+}
+
+router.get('/add', async (req, res)=>{
+    console.log(req.body);
+    await renderAddR(req, res, [])
+})
+
+router.post('/add', async (req, res) => {
+
+    console.dir(req.body);
+
+    let table = req.body.tableName;
+
+    switch (table) {
+        case 'ARTIKEL_ART'    :
+            await db.insertRequest(table, ['ARTIKEL_ART_NAME'], [`'${req.body.artikelArt.trim()}'`]);
+            break;
+        case 'ZUSTAND'        :
+            await db.insertRequest(table, ['ZUSTAND_NAME'], [`'${req.body.zustandName.trim()}'`]);
+            break;
+        case 'TRANSAKTIONSART':
+            await db.insertRequest(table, ['T_ART_NAME'], [`'${req.body.transart.trim()}'`]);
+            break;
+        case 'FIRMA'          :
+            await db.insertRequest(table, ['FIRMA_NAME'], [`'${req.body.firmaName.trim()}'`]);
+            break;
+        case 'ARTIKEL'        :
+            console.log('hi')
+            let id = await db.selectRequest(`Select ARTIKEL_ART_ID from ARTIKEL_ART WHERE ARTIKEL_ART_NAME='${req.body.artikelArt}';`);
             console.log(id);
-          id = id.pop()['ARTIKEL_ART_ID'];
-          await db.insertRequest(table,
-              ['ARTIKEL_ART_ID', 'ARTIKEL_NAME', 'ANZAHL_AUF_LAGER'],
-              [id, `'${req.body.artikelName.trim()}'`, req.body.anzahl]);
-          break;
-      case 'GERAET':
-          let artikelId = await db.selectRequest(`SELECT ARTIKEL_ID FROM ARTIKEL WHERE ARTIKEL_NAME='${req.body.artikelName}';`);
-          let artikelartId = await db.selectRequest(`Select ARTIKEL_ART_ID from ARTIKEL_ART WHERE ARTIKEL_ART_NAME = '${req.body.artikelArt}';`);
-          let zustandId = await db.selectRequest(`SELECT ZUSTAND_ID FROM ZUSTAND WHERE ZUSTAND_NAME='${ req.body.zustandName }';`);
-          let aufLager = req.body.isAufLager ? 1 : 0;
+            id = id.pop()['ARTIKEL_ART_ID'];
+            await db.insertRequest(table,
+                ['ARTIKEL_ART_ID', 'ARTIKEL_NAME', 'ANZAHL_AUF_LAGER'],
+                [id, `'${req.body.artikelName.trim()}'`, req.body.anzahl]);
+            break;
+        case 'GERAET':
+            let artikelId = await db.selectRequest(`SELECT ARTIKEL_ID FROM ARTIKEL WHERE ARTIKEL_NAME='${req.body.artikelName}';`);
+            let artikelartId = await db.selectRequest(`Select ARTIKEL_ART_ID from ARTIKEL_ART WHERE ARTIKEL_ART_NAME = '${req.body.artikelArt}';`);
+            let zustandId = await db.selectRequest(`SELECT ZUSTAND_ID FROM ZUSTAND WHERE ZUSTAND_NAME='${req.body.zustandName}';`);
+            let aufLager = req.body.isAufLager ? 1 : 0;
 
-          artikelartId = artikelartId.pop()['ARTIKEL_ART_ID'];
-          artikelId = artikelId.pop()['ARTIKEL_ID'];
-          zustandId = zustandId.pop()['ZUSTAND_ID'];
-
-
-          await db.insertRequest(table,
-              ['GERAET_ID', 'ARTIKEL_ID', 'ZUSTAND_ID', 'IST_AUF_LAGER'],
-              [`'${req.body.geraet_ID.trim()}'`, artikelId, zustandId , aufLager] );
-          break;
-
-      case 'MITARBEITER':
-          let firmaId = await db.selectRequest(`SELECT FIRMA_ID FROM FIRMA WHERE FIRMA_NAME='${req.body.firmaName}';`);
-          firmaId = firmaId.pop()['FIRMA_ID'];
-          await db.insertRequest(table,
-              ['K_NUMMER, MA_VORNAME, MA_NACHNAME, FIRMA_ID'],
-              [`'${req.body.maID.trim()}'`, `'${req.body.maVname.trim()}'`, `'${req.body.maNname.trim()}'`, firmaId] );
-          break;
-      case 'TRANSAKTION':
-          let ma1name     = req.body.ma1name.trim();
-          let ma2name     = req.body.ma2name.trim();
-          let geraetId     = req.body.gerateName;
-          let description = req.body.descr.trim();
-          let isActual    = req.body.isActual ? 1 : 0;
-
-          let tartId = await db.selectRequest(`SELECT T_ART_ID FROM TRANSAKTIONSART WHERE T_ART_NAME='${req.body.tart}';`);
-          tartId = tartId.pop()['T_ART_ID'];
-
-          ma1name = ma1name.split(" ");
-
-          let ma1Id = await db.selectRequest(`SELECT K_NUMMER FROM MITARBEITER WHERE MA_VORNAME='${ma1name[0]}' AND MA_NACHNAME='${ma1name[1]}';`);
-          ma1Id = ma1Id.pop()['K_NUMMER'];
-          ma1Id = `'${ma1Id}'`;
-          let ma2Id = "NULL";
-
-          if(ma2name !== "[NULL]") {
-              ma2name = ma2name.split(" ");
-              ma2Id = await db.selectRequest(`SELECT K_NUMMER FROM MITARBEITER WHERE MA_VORNAME='${ma2name[0]}' AND MA_NACHNAME='${ma2name[1]}';`);
-              ma2Id = ma2Id.pop()['K_NUMMER'];
-              ma2Id = `'${ma2Id}'`;
-          }
-          await db.insertRequest(table,
-              ['TRANSAKTION_ART_ID', 'MA_1', 'MA_2', 'GERAET_ID', 'IST_AKTUEL', 'BESCHREIBUNG' ],
-              [tartId, ma1Id, ma2Id, `'${geraetId}'`, isActual, `'${description}'` ] );
-          break;
-      default:
-          res.status(500);
-          res.send("unrecognised table")
-          return;
-
-  }
+            artikelartId = artikelartId.pop()['ARTIKEL_ART_ID'];
+            artikelId = artikelId.pop()['ARTIKEL_ID'];
+            zustandId = zustandId.pop()['ZUSTAND_ID'];
 
 
+            await db.insertRequest(table,
+                ['GERAET_ID', 'ARTIKEL_ID', 'ZUSTAND_ID', 'IST_AUF_LAGER'],
+                [`'${req.body.geraet_ID.trim()}'`, artikelId, zustandId, aufLager]);
+            break;
 
-  res.render("confirmation");
+        case 'MITARBEITER':
+            let firmaId = await db.selectRequest(`SELECT FIRMA_ID FROM FIRMA WHERE FIRMA_NAME='${req.body.firmaName}';`);
+            firmaId = firmaId.pop()['FIRMA_ID'];
+            await db.insertRequest(table,
+                ['K_NUMMER, MA_VORNAME, MA_NACHNAME, FIRMA_ID'],
+                [`'${req.body.maID.trim()}'`, `'${req.body.maVname.trim()}'`, `'${req.body.maNname.trim()}'`, firmaId]);
+            break;
+        case 'TRANSAKTION':
+            let ma1name = req.body.ma1name.trim();
+            let ma2name = req.body.ma2name.trim();
+            let geraetId = req.body.gerateName.trim();
+            let description = req.body.descr.trim();
+            let isActual = req.body.isActual ? 1 : 0;
+
+            let tartId = await db.selectRequest(`SELECT T_ART_ID FROM TRANSAKTIONSART WHERE T_ART_NAME='${req.body.tart}';`);
+            tartId = tartId.pop()['T_ART_ID'];
+
+            ma1name = ma1name.split(" ");
+
+            let ma1Id = await db.selectRequest(`SELECT K_NUMMER FROM MITARBEITER WHERE MA_VORNAME='${ma1name[0]}' AND MA_NACHNAME='${ma1name[1]}';`);
+            ma1Id = ma1Id.pop()['K_NUMMER'];
+            ma1Id = `'${ma1Id}'`;
+            let ma2Id = "NULL";
+
+            if (ma2name !== "[NULL]") {
+                ma2name = ma2name.split(" ");
+                ma2Id = await db.selectRequest(`SELECT K_NUMMER FROM MITARBEITER WHERE MA_VORNAME='${ma2name[0]}' AND MA_NACHNAME='${ma2name[1]}';`);
+                ma2Id = ma2Id.pop()['K_NUMMER'];
+                ma2Id = `'${ma2Id}'`;
+            }
+            await db.insertRequest(table,
+                ['TRANSAKTION_ART_ID', 'MA_1', 'MA_2', 'GERAET_ID', 'IST_AKTUEL', 'BESCHREIBUNG'],
+                [tartId, ma1Id, ma2Id, `'${geraetId}'`, isActual, `'${description}'`]);
+            break;
+        default:
+            res.status(500);
+            res.send("unrecognised table")
+            return;
+    }
+    await renderAddR(req, res);
 
 });
 
