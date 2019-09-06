@@ -1,0 +1,114 @@
+extends layout
+
+block script
+    - var keys = undefined;
+    script.
+        window.onload = function () {
+            let selectedTable = document.getElementById("table-select");
+            let label = document.getElementById("tableId-label");
+
+            selectedTable.addEventListener('change', function () {
+                label.textContent = selectedTable.value + " Id :\t";
+            })
+            selectedTable.dispatchEvent(new Event("change"));
+
+            let form = document.getElementById('form');
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                let data = {
+                    table: form['table'].value,
+                    id: form['id'].value
+                }
+                check(data);
+            });
+
+            function check(data) {
+                let request = new XMLHttpRequest();
+                request.addEventListener('load', function (event) {
+                    if (request.status >= 200 && request.status < 300) {
+                    //    console.log(request.responseText);
+                        document.getElementById('table').style.display = 'block'
+                        var input = JSON.parse(request.responseText);
+                        console.log(input.values)
+                        keys = input.keys;
+                        tableCreate(input.keys, input.values)
+                    } else {
+                        console.warn(request.statusText, request.responseText);
+                    }
+                });
+                request.open("POST", "rmv");
+                request.setRequestHeader("Content-Type", "application/json");
+                //console.log(data);
+                request.send(JSON.stringify(data))
+            };
+
+            function tableCreate(head, values) {
+                //body reference
+                var body = document.getElementById('table');
+
+                // create elements <table> and a <tbody>
+                var tbl = document.createElement("table");
+                var tblBody = document.createElement("tbody");
+                console.log(values[0]);
+                // cells creation
+                for (var j = 0; j < values.length; j++) {
+                    // table row creation
+                    var row = document.createElement("tr");
+
+                    for (var i = 0; i < head.length; i++) {
+                        // create element <td> and text node
+                        //Make text node the contents of <td> element
+                        // put <td> at end of the table row
+                        var cell = document.createElement("td");
+                        var cellText = document.createTextNode(values[j][i]);
+
+                        cell.appendChild(cellText);
+                        row.appendChild(cell);
+                    }
+
+                    //row added to end of table body
+                    tblBody.appendChild(row);
+                }
+
+                // append the <tbody> inside the <table>
+                tbl.appendChild(tblBody);
+                // put <table> in the <body>
+                body.appendChild(tbl);
+                // tbl border attribute to
+               // tbl.setAttribute("border", "2");
+            }
+        };
+
+
+
+
+block content
+
+        form#form(type='post')
+
+            label(for='table-select') Table:
+            select#table-select(name = 'table')
+                each item in tables
+                    option=item
+            div#idInput
+                label#tableId-label(for='tableId-input') text
+                input#tableId-input(type='text', name='id')
+                button.btn.btn-primary(type='submit') Find
+
+        form(method='POST')
+            div#table(style = "display:none")
+                //-if(typeof  keys !== 'undefined')
+                    table
+                        tr
+                        each th_text in keys
+                            th=th_text
+
+                        -var length = typeof values === 'undefined' ? 0 : values.length;
+                        -for(let i = 0; i<length; i++)
+                        tr
+                        each td_text in values[i]
+                            td=td_text
+                button.btn.btn-primary(type='submit') Remove
+
+
+
